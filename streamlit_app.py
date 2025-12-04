@@ -559,11 +559,21 @@ def main():
     # If number of features changes, rebuild columns but KEEP existing values
     if st.session_state.data_df.shape[1] != num_features:
         old = st.session_state.data_df
-        new = pd.DataFrame(0.0, index=old.index, columns=feature_names)
+        n_rows = old.shape[0]
+    
+        # start with random values for ALL columns
+        new = pd.DataFrame(
+            np.random.randn(n_rows, num_features),
+            columns=feature_names
+        )
+    
+        # overwrite any columns that already existed with their old values
         for c in old.columns:
             if c in new.columns:
                 new[c] = old[c]
+    
         st.session_state.data_df = new
+
 
     edited_df = st.data_editor(
         st.session_state.data_df,
