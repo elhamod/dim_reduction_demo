@@ -7,8 +7,10 @@ import plotly.graph_objects as go
 
 import torch
 from pythae.models import VAE, VAEConfig
-from pythae.trainers import BaseTrainer, TrainerConfig
 from pythae.data import DataModule
+from pythae.trainers import BaseTrainer
+from pythae.trainers.training_config import TrainingConfig
+from pythae.data.datasets import NumpyDataset
 
 # ============================================================
 # PCA utilities
@@ -263,50 +265,45 @@ def make_pca_score_figure(scores, pcs_to_show):
 # ============================================================
 
 def train_pythae_vae(X, latent_dim=2, epochs=200, batch_size=16):
-    """
-    X: numpy array (n_samples, n_features)
-    Returns:
-      model: trained Pythae VAE
-      Z: latent mean embeddings (approx, here we take encoder output)
-      X_recon: reconstructed points
-    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    config = VAEConfig(
+    # Create VAE model
+    model_config = VAEConfig(
         input_dim=(X.shape[1],),
         latent_dim=latent_dim,
         reconstruction_loss="mse",
     )
-    model = VAE(model_config=config).to(device)
+    model = VAE(model_config).to(device)
 
-    dm = DataModule(
-        train_data=X.astype(np.float32),
-        batch_size=min(batch_size, len(X)),
-    )
+    # Dataset wrapper
+    dataset = NumpyDataset(X.astype(np.float32))
 
-    trainer_config = TrainerConfig(
+    # Training config (REPLACES TrainerConfig)
+    train_config = TrainingConfig(
+        output_dir="vae_tmp",
         num_epochs=epochs,
         batch_size=min(batch_size, len(X)),
-        use_cuda=torch.cuda.is_available(),
         learning_rate=1e-3,
-        output_dir="pythae_tmp",  # will just be used for logs/checkpoints
     )
+    
     trainer = BaseTrainer(
         model=model,
-        config=trainer_config,
+        train_dataset=NumpyDataset(X.astype(np.float32)),
+        training_config=train_config,
     )
-    trainer.train(dm)
 
+    trainer.train()
+
+    # After training, compute reconstructions + latent
     model.eval()
     with torch.no_grad():
         X_tensor = torch.tensor(X.astype(np.float32)).to(device)
         outputs = model(X_tensor)
-        # Pythae's VAE returns a dict-like ModelOutput
         X_recon = outputs["reconstruction"].cpu().numpy()
-        # For VAE, z usually contains latent samples; for a "mean" view this is fine for viz
         Z = outputs["z"].cpu().numpy()
 
     return model, Z, X_recon
+
 
 
 def make_vae_latent_and_manifold_figures(
