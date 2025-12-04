@@ -1,14 +1,17 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import plotly.graph_objects as go
 
+import numpy as np
 import torch
+
+
 from pythae.models import VAE, VAEConfig
-from pythae.trainers import BaseTrainer, TrainerConfig
-from pythae.data.datasets import NumpyDataset
+from pythae.trainers import BaseTrainerConfig
+from pythae.pipelines import TrainingPipeline
+
 
 # ============================================================
 # PCA utilities
@@ -262,46 +265,84 @@ def make_pca_score_figure(scores, pcs_to_show):
 # Pythae VAE utilities
 # ============================================================
 
-def train_pythae_vae(X, latent_dim=2, epochs=200, batch_size=16):
+import numpy as np
+import torch
+
+from pythae.models import VAE, VAEConfig
+from pythae.trainers import BaseTrainerConfig
+from pythae.pipelines import TrainingPipeline
+
+
+def train_pythae_vae(
+    X: np.ndarray,
+    latent_dim: int = 2,
+    num_epochs: int = 200,
+    batch_size: int = 32,
+    learning_rate: float = 1e-3,
+    output_dir: str = "pythae_vae_runs",
+):
+    """
+    Train a Pythae VAE on tabular data X (n_samples x n_features).
+
+    Returns
+    -------
+    model : VAE
+        Trained VAE model (can be used for decoding a latent grid).
+    Z : np.ndarray
+        Latent embeddings of shape (n_samples, latent_dim).
+    X_recon : np.ndarray
+        Reconstructions of X, same shape as X.
+    """
+
+    # Pythae expects float32 tensors
+    X = X.astype(np.float32)
+    n_features = X.shape[1]
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Create VAE model
+    # 1) Build VAE model config for tabular data
     model_config = VAEConfig(
-        input_dim=(X.shape[1],),
-        latent_dim=latent_dim,
-        reconstruction_loss="mse",
+        input_dim=(n_features,),   # 1D vector input
+        latent_dim=latent_dim
     )
     model = VAE(model_config).to(device)
 
-    # Dataset wrapper
-    dataset = NumpyDataset(X.astype(np.float32))
-
-    # Training config (REPLACES TrainerConfig)
-    train_config = TrainingConfig(
-        output_dir="vae_tmp",
-        num_epochs=epochs,
-        batch_size=min(batch_size, len(X)),
-        learning_rate=1e-3,
+    # 2) Trainer config (this is the correct class in 0.1.2)
+    train_config = BaseTrainerConfig(
+        output_dir=output_dir,
+        num_epochs=num_epochs,
+        learning_rate=learning_rate,
+        per_device_train_batch_size=min(batch_size, len(X)),
+        per_device_eval_batch_size=min(batch_size, len(X)),
+        steps_saving=None,
+        steps_predict=None,
+        no_cuda=(device == "cpu"),
     )
-    
-    trainer = BaseTrainer(
+
+    # 3) Training pipeline (handles DataProcessor / BaseDataset internally)
+    pipeline = TrainingPipeline(
         model=model,
-        train_dataset=NumpyDataset(X.astype(np.float32)),
-        training_config=train_config,
+        training_config=train_config
     )
 
-    trainer.train()
+    # Train directly from numpy array
+    pipeline(train_data=X)
 
-    # After training, compute reconstructions + latent
-    model.eval()
+    # After training, the trained model is stored in pipeline.model
+    trained_model = pipeline.model.to(device)
+    trained_model.eval()
+
+    # 4) Get reconstructions & latent embeddings using .predict
     with torch.no_grad():
-        X_tensor = torch.tensor(X.astype(np.float32)).to(device)
-        outputs = model(X_tensor)
-        X_recon = outputs["reconstruction"].cpu().numpy()
-        Z = outputs["z"].cpu().numpy()
+        X_tensor = torch.from_numpy(X).to(device)
+        out = trained_model.predict(X_tensor)
 
-    return model, Z, X_recon
+        # According to BaseAE.predict, keys are recon_x and embedding
+        # https://pythae.readthedocs.io/en/latest/_modules/pythae/models/base/base_model.html
+        X_recon = out.recon_x.detach().cpu().numpy()
+        Z = out.embedding.detach().cpu().numpy()
 
+    return trained_model, Z, X_recon
 
 
 def make_vae_latent_and_manifold_figures(
@@ -550,6 +591,8 @@ def main():
             st.subheader("5. VAE nonlinear embedding (Pythae)")
 
             with st.spinner("Training a small VAE on your data..."):
+                # X_scaled: (n_samples, n_features)
+
                 model, Z, X_recon_vae = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
