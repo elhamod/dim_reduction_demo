@@ -230,81 +230,81 @@ def make_3d_pca_geometry(
     return fig
 
 
-def make_pca_score_figure(scores, pcs_to_show):
-    n_samples, n_components = scores.shape
-    pcs_to_show = min(pcs_to_show, n_components)
+# def make_pca_score_figure(scores, pcs_to_show):
+#     n_samples, n_components = scores.shape
+#     pcs_to_show = min(pcs_to_show, n_components)
 
-    if pcs_to_show == 1:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                x=np.arange(n_samples),
-                y=scores[:, 0],
-                mode="markers+lines",
-                name="PC1 score",
-                hoverinfo="text",
-                hovertext=[
-                    f"Point #{i}<br>PC1 score = {scores[i,0]:.4f}"
-                    for i in range(n_samples)
-                ],
-            )
-        )
-        fig.update_layout(
-            xaxis_title="Sample index",
-            yaxis_title="PC1 score",
-            title="PCA scores (1D)",
-            height=500,
-        )
+#     if pcs_to_show == 1:
+#         fig = go.Figure()
+#         fig.add_trace(
+#             go.Scatter(
+#                 x=np.arange(n_samples),
+#                 y=scores[:, 0],
+#                 mode="markers+lines",
+#                 name="PC1 score",
+#                 hoverinfo="text",
+#                 hovertext=[
+#                     f"Point #{i}<br>PC1 score = {scores[i,0]:.4f}"
+#                     for i in range(n_samples)
+#                 ],
+#             )
+#         )
+#         fig.update_layout(
+#             xaxis_title="Sample index",
+#             yaxis_title="PC1 score",
+#             title="PCA scores (1D)",
+#             height=500,
+#         )
 
-    elif pcs_to_show == 2:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                x=scores[:, 0],
-                y=scores[:, 1],
-                mode="markers",
-                name="Scores",
-                hoverinfo="text",
-                hovertext=[
-                    f"Point #{i}<br>PC1 = {scores[i,0]:.4f}<br>PC2 = {scores[i,1]:.4f}"
-                    for i in range(n_samples)
-                ],
-            )
-        )
-        fig.update_layout(
-            xaxis_title="PC1",
-            yaxis_title="PC2",
-            title="PCA scores (2D)",
-            height=500,
-        )
+#     elif pcs_to_show == 2:
+#         fig = go.Figure()
+#         fig.add_trace(
+#             go.Scatter(
+#                 x=scores[:, 0],
+#                 y=scores[:, 1],
+#                 mode="markers",
+#                 name="Scores",
+#                 hoverinfo="text",
+#                 hovertext=[
+#                     f"Point #{i}<br>PC1 = {scores[i,0]:.4f}<br>PC2 = {scores[i,1]:.4f}"
+#                     for i in range(n_samples)
+#                 ],
+#             )
+#         )
+#         fig.update_layout(
+#             xaxis_title="PC1",
+#             yaxis_title="PC2",
+#             title="PCA scores (2D)",
+#             height=500,
+#         )
 
-    else:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter3d(
-                x=scores[:, 0],
-                y=scores[:, 1],
-                z=scores[:, 2],
-                mode="markers",
-                marker=dict(size=5),
-                name="Scores",
-                hoverinfo="text",
-                hovertext=[
-                    f"Point #{i}<br>"
-                    f"PC1 = {scores[i,0]:.4f}<br>"
-                    f"PC2 = {scores[i,1]:.4f}<br>"
-                    f"PC3 = {scores[i,2]:.4f}"
-                    for i in range(n_samples)
-                ],
-            )
-        )
-        fig.update_layout(
-            scene=dict(xaxis_title="PC1", yaxis_title="PC2", zaxis_title="PC3"),
-            title="PCA scores (3D)",
-            height=700,
-        )
+#     else:
+#         fig = go.Figure()
+#         fig.add_trace(
+#             go.Scatter3d(
+#                 x=scores[:, 0],
+#                 y=scores[:, 1],
+#                 z=scores[:, 2],
+#                 mode="markers",
+#                 marker=dict(size=5),
+#                 name="Scores",
+#                 hoverinfo="text",
+#                 hovertext=[
+#                     f"Point #{i}<br>"
+#                     f"PC1 = {scores[i,0]:.4f}<br>"
+#                     f"PC2 = {scores[i,1]:.4f}<br>"
+#                     f"PC3 = {scores[i,2]:.4f}"
+#                     for i in range(n_samples)
+#                 ],
+#             )
+#         )
+#         fig.update_layout(
+#             scene=dict(xaxis_title="PC1", yaxis_title="PC2", zaxis_title="PC3"),
+#             title="PCA scores (3D)",
+#             height=700,
+#         )
 
-    return fig
+#     return fig
 
 
 # ============================================================
@@ -661,8 +661,8 @@ def main():
         st.markdown(
             "Here we look at the coordinates of each point **in PC-space** rather than original feature space."
         )
-        fig_scores = make_pca_score_figure(scores, pcs_to_show)
-        st.plotly_chart(fig_scores, use_container_width=True)
+        # fig_scores = make_pca_score_figure(scores, pcs_to_show)
+        # st.plotly_chart(fig_scores, use_container_width=True)
 
         # ====================================================
         # VAE (Pythae) nonlinear projection + manifold
