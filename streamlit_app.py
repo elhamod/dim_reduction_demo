@@ -657,10 +657,10 @@ def main():
         # ====================================================
         # PCA score space
         # ====================================================
-        st.subheader("4. PCA score space (projection coordinates)")
-        st.markdown(
-            "Here we look at the coordinates of each point **in PC-space** rather than original feature space."
-        )
+        # st.subheader("4. PCA score space (projection coordinates)")
+        # st.markdown(
+        #     "Here we look at the coordinates of each point **in PC-space** rather than original feature space."
+        # )
         # fig_scores = make_pca_score_figure(scores, pcs_to_show)
         # st.plotly_chart(fig_scores, use_container_width=True)
 
@@ -668,7 +668,7 @@ def main():
         # VAE (Pythae) nonlinear projection + manifold
         # ====================================================
         if use_vae:
-            st.subheader("5. VAE nonlinear embedding (Pythae)")
+            st.subheader("4. VAE nonlinear embedding")
 
             with st.spinner("Training a small VAE on your data..."):
                 # X_scaled: (n_samples, n_features)
