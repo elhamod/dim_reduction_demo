@@ -610,12 +610,7 @@ def main():
             if len(selected_features) != 3:
                 st.warning("Please select exactly 3 features.")
             else:
-                if show_scaled_space:
-                    fig_orig = make_3d_pca_scaled_space_figure(
-                        X, pca, scaler, feature_names, pcs_to_show, selected_features
-                    )
-                else:
-                    fig_orig = make_3d_pca_geometry(
+                fig_orig = make_3d_pca_geometry(
                         X,
                         pca,
                         scaler,
@@ -624,7 +619,6 @@ def main():
                         selected_features,
                         scaled_space=show_scaled_space,
                     )
-st.plotly_chart(fig_orig, use_container_width=True)
 
                 st.plotly_chart(fig_orig, use_container_width=True)
         else:
