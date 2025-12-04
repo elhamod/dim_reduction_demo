@@ -174,7 +174,7 @@ def make_3d_pca_geometry(
                 y=line3[:, 1],
                 z=line3[:, 2],
                 mode="lines",
-                line=dict(width=4),
+                line=dict(width=4, color="black"),
                 name=f"PC1 line{axis_suffix}",
                 hoverinfo="skip",
             )
@@ -212,8 +212,11 @@ def make_3d_pca_geometry(
                 showscale=False,
                 name=f"PC1–PC2 plane{axis_suffix}",
                 hoverinfo="skip",
+                surfacecolor=np.zeros_like(plane3[:, :, 0]),      # ← CONSTANT VALUE
+                colorscale=[[0, "black"], [1, "black"]],          # ← FLAT COLOR
             )
         )
+
 
     fig.update_layout(
         scene=dict(
