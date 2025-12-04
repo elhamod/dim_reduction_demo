@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 
 import torch
 from pythae.models import VAE, VAEConfig
-from pythae.data import DataModule
 from pythae.trainers import BaseTrainer
 from pythae.trainers.training_config import TrainingConfig
 from pythae.data.datasets import NumpyDataset
