@@ -121,7 +121,8 @@ def make_3d_pca_original_space_figure(
     if pcs_to_show == 1:
         pc1 = pca.components_[0]  # in scaled space
         direction_orig = pc1 / scales
-        center_orig = scaler.inverse_transform(mean_scaled)[idxs]
+        center_full = scaler.inverse_transform(mean_scaled.reshape(1, -1))[0]
+        center_orig = center_full[idxs]
 
         t = np.linspace(-3, 3, 30)
         line_points = np.array(
@@ -148,7 +149,8 @@ def make_3d_pca_original_space_figure(
         pc2 = pca.components_[1]
         v1 = pc1 / scales
         v2 = pc2 / scales
-        center_orig = scaler.inverse_transform(mean_scaled)[idxs]
+        center_full = scaler.inverse_transform(mean_scaled.reshape(1, -1))[0]
+        center_orig = center_full[idxs]
 
         grid_lin = np.linspace(-2, 2, 20)
         a, b = np.meshgrid(grid_lin, grid_lin)
