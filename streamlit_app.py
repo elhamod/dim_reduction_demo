@@ -542,56 +542,37 @@ def main():
             st.caption("Latent dimension is fixed at 2 for 2D manifold visualization.")
 
         feature_names = [f"x{i+1}" for i in range(num_features)]
-        
-        st.subheader("1. Enter / edit your data points")
-        
-        # -------------------------------------------------
-        # 🔥 PERSISTENT TABLE (put this block right here)
-        # -------------------------------------------------
-        if "data_df" not in st.session_state:
-            st.session_state.data_df = pd.DataFrame(
-                np.random.randn(6, num_features),
-                columns=feature_names
-            )
-        
-        # If number of features changes, rebuild columns but KEEP existing values
-        if st.session_state.data_df.shape[1] != num_features:
-            old = st.session_state.data_df
-            new = pd.DataFrame(0.0, index=old.index, columns=feature_names)
-            for c in old.columns:
-                if c in new.columns:
-                    new[c] = old[c]
-            st.session_state.data_df = new
-        
-        # -------------------------------------------------
-        # Now build the editor using the stored dataframe
-        # -------------------------------------------------
-        edited_df = st.data_editor(
-            st.session_state.data_df,
-            key="data_editor",
-            num_rows="dynamic",
-            use_container_width=True,
-        )
-        
-        # Sync back the user edits into session_state
-        st.session_state.data_df = edited_df
-        # -------------------------------------------------
 
+    st.subheader("1. Enter / edit your data points")
     st.markdown(
         "Each **row** is a datapoint, each **column** is a feature. "
         "You can add or delete rows. All values are treated as numeric."
     )
 
-    default_rows = 6
-    default_data = np.random.randn(default_rows, num_features)
-    default_df = pd.DataFrame(default_data, columns=feature_names)
+    # --- persistent table state in main area ---
+    if "data_df" not in st.session_state:
+        st.session_state.data_df = pd.DataFrame(
+            np.random.randn(6, num_features),
+            columns=feature_names
+        )
+
+    # If number of features changes, rebuild columns but KEEP existing values
+    if st.session_state.data_df.shape[1] != num_features:
+        old = st.session_state.data_df
+        new = pd.DataFrame(0.0, index=old.index, columns=feature_names)
+        for c in old.columns:
+            if c in new.columns:
+                new[c] = old[c]
+        st.session_state.data_df = new
 
     edited_df = st.data_editor(
-        default_df,
+        st.session_state.data_df,
+        key="data_editor",
         num_rows="dynamic",
         use_container_width=True,
-        key="data_editor",
     )
+
+    st.session_state.data_df = edited_df
 
     if st.button("Run PCA (and VAE if enabled)", type="primary"):
         # ---------- Prepare X ----------
