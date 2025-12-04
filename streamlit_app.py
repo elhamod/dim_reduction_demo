@@ -133,7 +133,7 @@ def make_3d_pca_geometry(
                 y=[X3[i, 1], X3_recon[i, 1]],
                 z=[X3[i, 2], X3_recon[i, 2]],
                 mode="lines",
-                line=dict(width=2),
+                line=dict(width=2, color="black"),
                 showlegend=(i == 0),
                 name="Reconstruction error (plotted space)",
                 hoverinfo="text",
