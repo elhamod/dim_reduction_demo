@@ -27,76 +27,203 @@ def run_pca(X, n_pcs):
     return pca, scaler, scores, X_recon
 
 
-def make_3d_pca_scaled_space_figure(X, pca, scaler, feature_names, pcs_to_show, selected_features):
+def make_3d_pca_geometry(
+    X,
+    pca,
+    scaler,
+    feature_names,
+    pcs_to_show,
+    selected_features,
+    scaled_space: bool = False,
+):
     """
-    Plot PCA geometry directly in scaled space (unit variance), where
-    projection IS perfectly orthogonal and line/plane alignment is exact.
+    Unified 3D PCA geometry plot.
+
+    If scaled_space == False:
+        - Show everything in ORIGINAL feature units.
+    If scaled_space == True:
+        - Show everything in STANDARDIZED (scaled) space where
+          projection is truly orthogonal and subspace is aligned.
     """
-    # pick features
     idxs = [feature_names.index(f) for f in selected_features]
 
-    # scale the data
-    Xs = scaler.transform(X)  # (n, d)
-    Xs3 = Xs[:, idxs]
+    # ---- Workhorse: always do PCA in scaled space ----
+    X_scaled = scaler.transform(X)                      # (n, d)
+    scores = pca.transform(X_scaled)                    # (n, k)
+    X_scaled_recon = pca.inverse_transform(scores)      # (n, d)
 
-    # project & reconstruct in scaled space
-    scores = pca.transform(Xs)
-    Xs_recon = pca.inverse_transform(scores)   # still in scaled space
-    Xs3_recon = Xs_recon[:, idxs]
+    # Also compute original-space versions for errors / original view
+    X_orig = scaler.inverse_transform(X_scaled)         # (n, d)
+    X_recon_orig = scaler.inverse_transform(X_scaled_recon)
 
+    # Decide what to actually PLOT
+    if scaled_space:
+        X_plot = X_scaled
+        X_recon_plot = X_scaled_recon
+        axis_suffix = " (scaled)"
+        title_suffix = "PCA geometry in SCALED space"
+    else:
+        X_plot = X_orig
+        X_recon_plot = X_recon_orig
+        axis_suffix = ""
+        title_suffix = "PCA projection & reconstruction in ORIGINAL space"
+
+    X3 = X_plot[:, idxs]
+    X3_recon = X_recon_plot[:, idxs]
+
+    n = X3.shape[0]
+
+    # full-space error (in ORIGINAL space, so it's invariant to the view)
+    full_err = np.linalg.norm(X_orig - X_recon_orig, axis=1)
+
+    import plotly.graph_objects as go
     fig = go.Figure()
 
-    # original points (scaled)
-    fig.add_trace(go.Scatter3d(
-        x=Xs3[:,0], y=Xs3[:,1], z=Xs3[:,2],
-        mode="markers",
-        name="Original (scaled space)"
-    ))
+    # ---------- Original & reconstructed points ----------
+    def point_hover(i, kind):
+        coords = "<br>".join(
+            f"{selected_features[j]}{axis_suffix} = {X3[i, j]:.3f}" for j in range(3)
+        )
+        rcoords = "<br>".join(
+            f"{selected_features[j]}{axis_suffix} = {X3_recon[i, j]:.3f}"
+            for j in range(3)
+        )
+        return (
+            f"{kind} point #{i}<br>"
+            + "Plotted coords (subset):<br>"
+            + coords
+            + "<br><br>Reconstructed (subset):<br>"
+            + rcoords
+            + f"<br><br>Total reconstruction error (L2, original {X.shape[1]}D) = {full_err[i]:.4f}"
+        )
 
-    # reconstructed points (scaled)
-    fig.add_trace(go.Scatter3d(
-        x=Xs3_recon[:,0], y=Xs3_recon[:,1], z=Xs3_recon[:,2],
-        mode="markers",
-        marker=dict(symbol="x", size=4),
-        name="Reconstructed (scaled space)"
-    ))
+    # original points
+    fig.add_trace(
+        go.Scatter3d(
+            x=X3[:, 0],
+            y=X3[:, 1],
+            z=X3[:, 2],
+            mode="markers",
+            marker=dict(size=6),
+            name=f"Original{axis_suffix}",
+            hovertext=[point_hover(i, "Original") for i in range(n)],
+            hoverinfo="text",
+        )
+    )
 
-    # projection line / plane (scaled)
-    origin = np.zeros((1, X.shape[1]))  # PCA subspace passes through 0 in scaled space
-    if pcs_to_show == 1:
+    # reconstructed points
+    fig.add_trace(
+        go.Scatter3d(
+            x=X3_recon[:, 0],
+            y=X3_recon[:, 1],
+            z=X3_recon[:, 2],
+            mode="markers",
+            marker=dict(size=4, symbol="x"),
+            name=f"Reconstructed{axis_suffix}",
+            hovertext=[point_hover(i, "Reconstructed") for i in range(n)],
+            hoverinfo="text",
+        )
+    )
+
+    # ---------- Error segments in the plotted space ----------
+    for i in range(n):
+        fig.add_trace(
+            go.Scatter3d(
+                x=[X3[i, 0], X3_recon[i, 0]],
+                y=[X3[i, 1], X3_recon[i, 1]],
+                z=[X3[i, 2], X3_recon[i, 2]],
+                mode="lines",
+                line=dict(width=2),
+                showlegend=(i == 0),
+                name="Reconstruction error (plotted space)",
+                hoverinfo="text",
+                hovertext=(
+                    f"Error segment for point #{i}<br>"
+                    f"L2 error (3D plotted space) = {np.linalg.norm(X3[i] - X3_recon[i]):.4f}<br>"
+                    f"L2 error (original {X.shape[1]}D) = {full_err[i]:.4f}"
+                ),
+            )
+        )
+
+    # ---------- Projection line / plane (always built in SCALED space) ----------
+    d = X.shape[1]
+    origin_scaled = np.zeros((1, d))     # PCA subspace passes through 0 in scaled space
+
+    # Use score ranges to size line/plane
+    if scores.shape[1] >= 1:
+        s1_min, s1_max = scores[:, 0].min(), scores[:, 0].max()
+    else:
+        s1_min, s1_max = -3.0, 3.0
+
+    if pcs_to_show == 1 and pca.components_.shape[0] >= 1:
         pc1 = pca.components_[0]  # unit vector in scaled space
-        t = np.linspace(scores[:,0].min()*1.2, scores[:,0].max()*1.2, 40)
-        line_scaled = origin + t[:,None] * pc1
-        line3 = line_scaled[:, idxs]
-        fig.add_trace(go.Scatter3d(
-            x=line3[:,0], y=line3[:,1], z=line3[:,2],
-            mode="lines", line=dict(width=4),
-            name="PC1 line (scaled space)"
-        ))
-    elif pcs_to_show == 2:
+
+        t_vals = np.linspace(s1_min * 1.2, s1_max * 1.2, 40)
+        line_scaled = origin_scaled + np.outer(t_vals, pc1)  # (40, d)
+
+        if scaled_space:
+            line_plot_full = line_scaled
+        else:
+            line_plot_full = scaler.inverse_transform(line_scaled)
+
+        line3 = line_plot_full[:, idxs]
+
+        fig.add_trace(
+            go.Scatter3d(
+                x=line3[:, 0],
+                y=line3[:, 1],
+                z=line3[:, 2],
+                mode="lines",
+                line=dict(width=4),
+                name=f"PC1 line{axis_suffix}",
+                hoverinfo="skip",
+            )
+        )
+
+    elif pcs_to_show == 2 and pca.components_.shape[0] >= 2:
         pc1 = pca.components_[0]
         pc2 = pca.components_[1]
-        s1 = np.linspace(scores[:,0].min()*1.2, scores[:,0].max()*1.2, 25)
-        s2 = np.linspace(scores[:,1].min()*1.2, scores[:,1].max()*1.2, 25)
-        S1, S2 = np.meshgrid(s1, s2)
-        plane_scaled = origin + S1[...,None]*pc1 + S2[...,None]*pc2
-        plane3 = plane_scaled.reshape(-1, X.shape[1])[:, idxs].reshape(len(s1), len(s2), 3)
-        fig.add_trace(go.Surface(
-            x=plane3[:,:,0], y=plane3[:,:,1], z=plane3[:,:,2],
-            opacity=0.4, showscale=False,
-            name="PC1–PC2 plane (scaled space)"
-        ))
+
+        s1_vals = np.linspace(scores[:, 0].min() * 1.2, scores[:, 0].max() * 1.2, 25)
+        s2_vals = np.linspace(scores[:, 1].min() * 1.2, scores[:, 1].max() * 1.2, 25)
+        S1, S2 = np.meshgrid(s1_vals, s2_vals)
+
+        grid_flat = np.stack([S1.ravel(), S2.ravel()], axis=1)  # (N, 2)
+
+        plane_scaled = (
+            origin_scaled
+            + grid_flat[:, 0:1] * pc1
+            + grid_flat[:, 1:2] * pc2
+        )  # (N, d)
+
+        if scaled_space:
+            plane_plot_full = plane_scaled
+        else:
+            plane_plot_full = scaler.inverse_transform(plane_scaled)
+
+        plane3 = plane_plot_full[:, idxs].reshape(S1.shape[0], S1.shape[1], 3)
+
+        fig.add_trace(
+            go.Surface(
+                x=plane3[:, :, 0],
+                y=plane3[:, :, 1],
+                z=plane3[:, :, 2],
+                opacity=0.35,
+                showscale=False,
+                name=f"PC1–PC2 plane{axis_suffix}",
+                hoverinfo="skip",
+            )
+        )
 
     fig.update_layout(
         scene=dict(
-            xaxis_title=selected_features[0] + " (scaled)",
-            yaxis_title=selected_features[1] + " (scaled)",
-            zaxis_title=selected_features[2] + " (scaled)",
+            xaxis_title=selected_features[0] + axis_suffix,
+            yaxis_title=selected_features[1] + axis_suffix,
+            zaxis_title=selected_features[2] + axis_suffix,
         ),
-        title="PCA Geometry in Scaled Space (Orthogonal Projection Visualized)",
-        height=700
+        title=title_suffix,
+        height=750,
     )
-
     return fig
 
 
@@ -399,7 +526,8 @@ def main():
         st.header("Settings")
         num_features = st.slider("Number of features (dimensions)", 2, 10, 3)
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
-        show_scaled_space = st.checkbox("Show PCA geometry in scaled space")
+        show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
+
 
 
         st.markdown("---")
@@ -487,9 +615,16 @@ def main():
                         X, pca, scaler, feature_names, pcs_to_show, selected_features
                     )
                 else:
-                    fig_orig = make_3d_pca_original_space_figure(
-                        X, X_recon, pca, scaler, feature_names, pcs_to_show, selected_features
+                    fig_orig = make_3d_pca_geometry(
+                        X,
+                        pca,
+                        scaler,
+                        feature_names,
+                        pcs_to_show,
+                        selected_features,
+                        scaled_space=show_scaled_space,
                     )
+st.plotly_chart(fig_orig, use_container_width=True)
 
                 st.plotly_chart(fig_orig, use_container_width=True)
         else:
