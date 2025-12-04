@@ -584,7 +584,14 @@ def main():
 
     st.session_state.data_df = edited_df
 
+    if "run_pca" not in st.session_state:
+        st.session_state.run_pca = False
+        
+
     if st.button("Run PCA (and VAE if enabled)", type="primary"):
+        st.session_state.run_pca = True
+
+    if st.session_state.run_pca:
         # ---------- Prepare X ----------
         try:
             X = edited_df[feature_names].astype(float).values
