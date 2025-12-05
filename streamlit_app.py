@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScalerF
+from sklearn.preprocessing import StandardScaler
 import plotly.graph_objects as go
 
 import numpy as np
