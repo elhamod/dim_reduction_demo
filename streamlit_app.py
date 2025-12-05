@@ -469,7 +469,7 @@ def train_pythae_vae(
     latent_dim: int = 2,
     num_epochs: int = 5000,
     batch_size: int = 64,
-    learning_rate: float = 1e-4,
+    learning_rate: float = 1e-3,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
@@ -504,7 +504,7 @@ def train_pythae_vae(
     #     input_dim=(n_features,),   # 1D vector input
     #     latent_dim=latent_dim
     # )
-    # model = AE(model_config).to(device)
+    # model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
 
     # 2) Trainer config (this is the correct class in 0.1.2)
     train_config = BaseTrainerConfig(
@@ -517,8 +517,8 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
-        scheduler_cls="ReduceLROnPlateau",
-        scheduler_params={"patience": 500, "factor": 0.9}
+        # scheduler_cls="ReduceLROnPlateau",
+        # scheduler_params={"patience": 500, "factor": 0.9}
         
         # scheduler_cls="MultiStepLR",
         # scheduler_params={
@@ -1035,8 +1035,8 @@ def main():
                     X,
                     latent_dim=latent_dim,
                     num_epochs = vae_epochs,
-                    batch_size=2,
-                    # learning_rate=1e-3,
+                    # batch_size=2,
+                    learning_rate=1e-4,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
