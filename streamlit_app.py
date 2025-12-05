@@ -338,7 +338,6 @@ class StreamlitLossCallback(TrainingCallback):
     def __init__(self, loss_placeholder):
         super().__init__()
         self.loss_placeholder = loss_placeholder
-        self.last_logs = {}
 
     def on_log(self, training_config, logs, **kwargs):
         """
@@ -346,8 +345,8 @@ class StreamlitLossCallback(TrainingCallback):
         `logs` is a dict; for example it typically contains
         'train_loss' and optionally 'eval_loss', plus 'epoch'.
         """
-        self.last_logs = logs
-
+        
+        print(logs)
         train_loss = logs.get("train_loss", None)
         eval_loss = logs.get("eval_loss", None)
         epoch = logs.get("epoch", None)
