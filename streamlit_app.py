@@ -354,7 +354,8 @@ class StreamlitLossCallback(TrainingCallback):
         #     parts.append(f"eval_loss = {eval_loss:.4f}")
 
         # if parts:
-        self.loss_placeholder.markdown(f"**VAE training loss** = {metrics["train_epoch_loss]:.4f}")
+        loss = metrics["train_epoch_loss]
+        self.loss_placeholder.markdown(f"**VAE training loss** = {loss:.4f}")
 
 
 def train_pythae_vae(
