@@ -499,7 +499,7 @@ def train_pythae_vae(
         input_dim=(n_features,),   # 1D vector input
         latent_dim=latent_dim
     )
-    model = VAE(model_config, encoder=Encoder_VAE_MLP, decoder=Decoder_AE_MLP).to(device)
+    model = VAE(model_config, encoder=Encoder_VAE_MLP(input_dim=input_dim, latent_dim=latent_dim), decoder=Decoder_AE_MLP(input_dim=input_dim, latent_dim=latent_dim)).to(device)
     # model_config = AEConfig(
     #     input_dim=(n_features,),   # 1D vector input
     #     latent_dim=latent_dim
