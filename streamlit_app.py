@@ -324,78 +324,163 @@ import torch
 from pythae.models import VAE, VAEConfig
 from pythae.trainers import BaseTrainerConfig
 from pythae.pipelines import TrainingPipeline
+from torch.utils.data import DataLoader, TensorDataset
+import torch.nn.functional as F
 
 
-def train_pythae_vae(
+
+
+def train_pythae_vae_until(
     X: np.ndarray,
     latent_dim: int = 2,
-    num_epochs: int = 200,
     batch_size: int = 32,
     learning_rate: float = 1e-3,
-    output_dir: str = "pythae_vae_runs",
+    error_threshold: float = 0.01,
+    max_epochs: int = 500,
+    status_placeholder=None,
 ):
     """
-    Train a Pythae VAE on tabular data X (n_samples x n_features).
+    Train a Pythae VAE on tabular data X until the average epoch loss
+    falls below `error_threshold` or `max_epochs` is reached.
 
     Returns
     -------
     model : VAE
-        Trained VAE model (can be used for decoding a latent grid).
-    Z : np.ndarray
-        Latent embeddings of shape (n_samples, latent_dim).
-    X_recon : np.ndarray
-        Reconstructions of X, same shape as X.
+    Z : np.ndarray        # latent embeddings
+    X_recon : np.ndarray  # reconstructions in input space
+    history : list[float] # loss per epoch
     """
-
-    # Pythae expects float32 tensors
     X = X.astype(np.float32)
     n_features = X.shape[1]
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # 1) Build VAE model config for tabular data
+    # Build VAE model
     model_config = VAEConfig(
-        input_dim=(n_features,),   # 1D vector input
-        latent_dim=latent_dim
+        input_dim=(n_features,),
+        latent_dim=latent_dim,
     )
     model = VAE(model_config).to(device)
 
-    # 2) Trainer config (this is the correct class in 0.1.2)
-    train_config = BaseTrainerConfig(
-        output_dir=output_dir,
-        num_epochs=num_epochs,
-        learning_rate=learning_rate,
-        per_device_train_batch_size=min(batch_size, len(X)),
-        per_device_eval_batch_size=min(batch_size, len(X)),
-        steps_saving=None,
-        steps_predict=None,
-        no_cuda=(device == "cpu"),
-    )
+    dataset = TensorDataset(torch.from_numpy(X))
+    loader = DataLoader(dataset, batch_size=min(batch_size, len(X)), shuffle=True)
 
-    # 3) Training pipeline (handles DataProcessor / BaseDataset internally)
-    pipeline = TrainingPipeline(
-        model=model,
-        training_config=train_config
-    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    # Train directly from numpy array
-    pipeline(train_data=X)
+    history = []
+    n_samples = len(dataset)
 
-    # After training, the trained model is stored in pipeline.model
-    trained_model = pipeline.model.to(device)
-    trained_model.eval()
+    for epoch in range(1, max_epochs + 1):
+        model.train()
+        epoch_loss = 0.0
 
-    # 4) Get reconstructions & latent embeddings using .predict
+        for (batch_x,) in loader:
+            batch_x = batch_x.to(device)
+
+            optimizer.zero_grad()
+            out = model(batch_x)  # Pythae model_output
+            # use model's loss_function for proper VAE loss
+            loss_dict = model.loss_function(out, batch_x)
+            loss = loss_dict["loss"]
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item() * batch_x.size(0)
+
+        epoch_loss /= n_samples
+        history.append(epoch_loss)
+
+        # Update Streamlit label if provided
+        if status_placeholder is not None:
+            status_placeholder.write(
+                f"VAE training — epoch {epoch}, loss = {epoch_loss:.6f}"
+            )
+
+        if epoch_loss <= error_threshold:
+            break
+
+    # Final embeddings and reconstructions
+    model.eval()
     with torch.no_grad():
         X_tensor = torch.from_numpy(X).to(device)
-        out = trained_model.predict(X_tensor)
-
-        # According to BaseAE.predict, keys are recon_x and embedding
-        # https://pythae.readthedocs.io/en/latest/_modules/pythae/models/base/base_model.html
+        out = model(X_tensor)
         X_recon = out.recon_x.detach().cpu().numpy()
         Z = out.embedding.detach().cpu().numpy()
 
-    return trained_model, Z, X_recon
+    return model, Z, X_recon, history
+
+
+
+# def train_pythae_vae(
+#     X: np.ndarray,
+#     latent_dim: int = 2,
+#     num_epochs: int = 200,
+#     batch_size: int = 32,
+#     learning_rate: float = 1e-3,
+#     output_dir: str = "pythae_vae_runs",
+# ):
+#     """
+#     Train a Pythae VAE on tabular data X (n_samples x n_features).
+
+#     Returns
+#     -------
+#     model : VAE
+#         Trained VAE model (can be used for decoding a latent grid).
+#     Z : np.ndarray
+#         Latent embeddings of shape (n_samples, latent_dim).
+#     X_recon : np.ndarray
+#         Reconstructions of X, same shape as X.
+#     """
+
+#     # Pythae expects float32 tensors
+#     X = X.astype(np.float32)
+#     n_features = X.shape[1]
+
+#     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+#     # 1) Build VAE model config for tabular data
+#     model_config = VAEConfig(
+#         input_dim=(n_features,),   # 1D vector input
+#         latent_dim=latent_dim
+#     )
+#     model = VAE(model_config).to(device)
+
+#     # 2) Trainer config (this is the correct class in 0.1.2)
+#     train_config = BaseTrainerConfig(
+#         output_dir=output_dir,
+#         num_epochs=num_epochs,
+#         learning_rate=learning_rate,
+#         per_device_train_batch_size=min(batch_size, len(X)),
+#         per_device_eval_batch_size=min(batch_size, len(X)),
+#         steps_saving=None,
+#         steps_predict=None,
+#         no_cuda=(device == "cpu"),
+#     )
+
+#     # 3) Training pipeline (handles DataProcessor / BaseDataset internally)
+#     pipeline = TrainingPipeline(
+#         model=model,
+#         training_config=train_config
+#     )
+
+#     # Train directly from numpy array
+#     pipeline(train_data=X)
+
+#     # After training, the trained model is stored in pipeline.model
+#     trained_model = pipeline.model.to(device)
+#     trained_model.eval()
+
+#     # 4) Get reconstructions & latent embeddings using .predict
+#     with torch.no_grad():
+#         X_tensor = torch.from_numpy(X).to(device)
+#         out = trained_model.predict(X_tensor)
+
+#         # According to BaseAE.predict, keys are recon_x and embedding
+#         # https://pythae.readthedocs.io/en/latest/_modules/pythae/models/base/base_model.html
+#         X_recon = out.recon_x.detach().cpu().numpy()
+#         Z = out.embedding.detach().cpu().numpy()
+
+#     return trained_model, Z, X_recon
 
 
 def make_vae_latent_and_manifold_figures(
@@ -675,12 +760,21 @@ def main():
 
         st.markdown("---")
         use_vae = st.checkbox("Enable VAE (Pythae nonlinear view)", value=True)
-        vae_epochs = 200
         latent_dim = 2
+        vae_threshold = 0.01  # default
+    
         if use_vae:
             latent_dim = st.radio("VAE latent dimension", [1, 2], index=1)
-            vae_epochs = st.slider("VAE training epochs", 50, 800, 250, step=50)
-            st.caption("Latent dimension 1 → curve; 2 → surface manifold.")
+            threshold_str = st.text_input(
+                "VAE stopping loss (MSE per epoch)", "0.01",
+                help="Training will stop when average epoch loss falls below this value (or max epochs is reached).",
+            )
+            try:
+                vae_threshold = float(threshold_str)
+            except ValueError:
+                st.warning("Invalid threshold, using 0.01 as default.")
+                vae_threshold = 0.01
+
 
 
     
@@ -836,17 +930,29 @@ def main():
         # VAE (Pythae) nonlinear projection + manifold
         # ====================================================
         if use_vae:
-            st.subheader("4. VAE nonlinear embedding")
-
-            with st.spinner("Training a small VAE on your data..."):
-                # X_scaled: (n_samples, n_features)
-
-                model, Z, X_recon_vae = train_pythae_vae(
+            st.subheader("5. VAE nonlinear embedding (Pythae)")
+        
+            # placeholder for live loss display
+            loss_label = st.empty()
+        
+            with st.spinner("Training a small VAE on your data (with early stopping)..."):
+                model, Z, X_recon_vae, vae_history = train_pythae_vae_until(
                     X,
                     latent_dim=latent_dim,
-                    num_epochs=vae_epochs,
                     batch_size=16,
+                    learning_rate=1e-3,
+                    error_threshold=vae_threshold,
+                    max_epochs=500,
+                    status_placeholder=loss_label,
                 )
+        
+            # After training finishes, show final status
+            if len(vae_history) > 0:
+                st.success(
+                    f"VAE training finished in {len(vae_history)} epoch(s). "
+                    f"Final loss = {vae_history[-1]:.6f} (threshold = {vae_threshold:.6f})"
+                )
+
 
             if num_features >= 3:
                 selected_features_vae = st.multiselect(
