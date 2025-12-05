@@ -11,6 +11,7 @@ import torch
 from pythae.models import VAE, VAEConfig
 from pythae.models import AE, AEConfig
 from pythae.trainers import BaseTrainerConfig
+from pythae.trainers.training_callbacks import TrainingCallback
 from pythae.pipelines import TrainingPipeline
 
 # Shared colors
