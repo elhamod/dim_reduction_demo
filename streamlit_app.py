@@ -506,6 +506,8 @@ def train_pythae_vae(
     # )
     # model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
 
+    print(model)
+    
     # 2) Trainer config (this is the correct class in 0.1.2)
     train_config = BaseTrainerConfig(
         # output_dir=output_dir,
@@ -517,16 +519,14 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
-        scheduler_cls="ReduceLROnPlateau",
-        scheduler_params={"patience": 2000, "factor": 0.9}
-        
+        # scheduler_cls="ReduceLROnPlateau",
+        # scheduler_params={"patience": 2000, "factor": 0.9}
         # scheduler_cls="MultiStepLR",
         # scheduler_params={
         #     "milestones": [200, 350, 500, 750, 1000],
         #     "gamma": 10 ** (-1 / 5),
         #     # "verbose": True,
         # },
-        
         # optimizer_cls="RMSprop",
         # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
@@ -542,6 +542,8 @@ def train_pythae_vae(
         callbacks.append(loss_callback)
         
     # Train directly from numpy array
+    print(X_scaled.shape, X_scaled)
+    raise
     pipeline(train_data=X_scaled, callbacks=callbacks)
 
     # After training, the trained model is stored in pipeline.model
