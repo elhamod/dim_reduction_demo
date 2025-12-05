@@ -683,7 +683,7 @@ def main():
                 model, Z, X_recon_vae = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
-                    epochs=vae_epochs,
+                    num_epochs=vae_epochs,
                     batch_size=16,
                 )
 
