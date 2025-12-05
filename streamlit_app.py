@@ -635,7 +635,7 @@ def main():
         st.header("Settings")
         
         if "num_features" not in st.session_state:
-        st.session_state.num_features = 3
+            st.session_state.num_features = 3
 
         num_features = st.slider(
             "Number of features (dimensions)",
