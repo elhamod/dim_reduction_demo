@@ -635,14 +635,13 @@ def main():
         st.header("Settings")
         
         if "num_features" not in st.session_state:
-            st.session_state.num_features_slider= 3   # initial default
+        st.session_state.num_features = 3
 
         num_features = st.slider(
             "Number of features (dimensions)",
-            min_value=1,
-            max_value=10,
+            1, 10,
             value=st.session_state.num_features,
-            key="num_features_slider",
+            key="num_features",     # ⬅ same key name
         )
         
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
@@ -694,7 +693,7 @@ def main():
                 st.session_state.data_df = df_num.copy()
     
                 # 🔥 update num_features based on CSV
-                st.session_state.num_features_slider = df_num.shape[1]
+                st.session_state.num_features = df_num.shape[1]
         except Exception as e:
             st.error(f"Could not read CSV: {e}")
 
