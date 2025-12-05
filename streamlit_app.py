@@ -732,20 +732,6 @@ def main():
                 return
 
 
-        # ---------- Prepare X ----------
-    try:
-        X = edited_df[feature_names].astype(float).values
-    except Exception as e:
-        st.error(f"Could not parse data as numeric: {e}")
-        st.session_state.run_pca = False
-        return
-
-
-        n_samples = X.shape[0]
-        if n_samples < 2:
-            st.warning("Need at least 2 data points for PCA.")
-            return
-
         # ====================================================
         # PCA
         # ====================================================
