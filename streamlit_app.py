@@ -339,7 +339,7 @@ class StreamlitLossCallback(TrainingCallback):
         super().__init__()
         self.loss_placeholder = loss_placeholder
 
-    def on_log(self, training_config, metrics, **kwargs):
+    def on_log(self, training_config, logs, **kwargs):
         # print("my logs", logs)
         # train_loss = logs.get("train_loss", None)
         # eval_loss = logs.get("eval_loss", None)
