@@ -417,7 +417,7 @@ def train_pythae_vae(
         callbacks.append(loss_callback)
         
     # Train directly from numpy array
-    pipeline(train_data=X)
+    pipeline(train_data=X, callbacks=callbacks)
 
     # After training, the trained model is stored in pipeline.model
     trained_model = pipeline.model.to(device)
