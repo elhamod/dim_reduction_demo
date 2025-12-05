@@ -637,11 +637,6 @@ def main():
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
         show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
 
-        uploaded_file = st.file_uploader(
-            "Upload CSV (optional, numeric columns only)", type=["csv"]
-        )
-
-
         st.markdown("---")
         use_vae = st.checkbox("Enable VAE (Pythae nonlinear view)", value=True)
         vae_epochs = 200
@@ -652,7 +647,11 @@ def main():
             st.caption("Latent dimension 1 → curve; 2 → surface manifold.")
 
 
-        feature_names = [f"x{i+1}" for i in range(num_features)]
+        # feature_names = [f"x{i+1}" for i in range(num_features)]
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV (optional, numeric columns only)", type=["csv"]
+    )
 
     st.subheader("1. Enter / edit your data points")
     st.markdown(
@@ -661,37 +660,45 @@ def main():
     )
 
     # --- persistent table state in main area ---
+    # 1) Initialize if not present
     if "data_df" not in st.session_state:
         st.session_state.data_df = pd.DataFrame(
             np.random.randn(6, num_features),
-            columns=feature_names
+            columns=[f"x{i+1}" for i in range(num_features)]
         )
 
-    # If number of features changes, rebuild columns but KEEP existing values
-    if st.session_state.data_df.shape[1] != num_features:
-        old = st.session_state.data_df
-        n_rows = old.shape[0]
-    
-        # start with random values for ALL columns
-        new = pd.DataFrame(
-            np.random.randn(n_rows, num_features),
-            columns=feature_names
-        )
-    
-        # overwrite any columns that already existed with their old values
-        for c in old.columns:
-            if c in new.columns:
-                new[c] = old[c]
-    
-        st.session_state.data_df = new
+    # 2) If a CSV is uploaded, replace the table with its numeric columns
+    if uploaded_file is not None:
+        try:
+            df_csv = pd.read_csv(uploaded_file)
+            df_num = df_csv.select_dtypes(include="number")
 
+            if df_num.shape[1] == 0:
+                st.warning("Uploaded CSV has no numeric columns; keeping existing table.")
+            else:
+                # limit to first 10 numeric columns
+                if df_num.shape[1] > 10:
+                    df_num = df_num.iloc[:, :10]
 
+                st.session_state.data_df = df_num.copy()
+        except Exception as e:
+            st.error(f"Could not read CSV: {e}")
+
+    # 3) Now define feature_names and num_features from the CURRENT table
+    feature_names = list(st.session_state.data_df.columns)
+    num_features = len(feature_names)
+
+    # 4) Show editor using the stored dataframe
     edited_df = st.data_editor(
         st.session_state.data_df,
         key="data_editor",
         num_rows="dynamic",
         use_container_width=True,
     )
+
+    # 5) Sync back user edits
+    st.session_state.data_df = edited_df
+
 
     st.session_state.data_df = edited_df
 
@@ -704,32 +711,25 @@ def main():
 
     if st.session_state.run_pca:
         # ---------- Prepare X ----------
-        # If a CSV is uploaded, we use it; otherwise we use the table.
-        if uploaded_file is not None:
-            try:
-                df_csv = pd.read_csv(uploaded_file)
-                df_num = df_csv.select_dtypes(include="number")
-    
-                if df_num.shape[1] == 0:
-                    st.error("Uploaded CSV has no numeric columns.")
-                    st.session_state.run_pca = False
-                    return
-    
-                # limit to first 10 numeric columns
-                df_num = df_num.iloc[:, :10]
-                feature_names = list(df_num.columns)
-                X = df_num.values
-            except Exception as e:
-                st.error(f"Could not read CSV: {e}")
-                st.session_state.run_pca = False
-                return
-    else:
         try:
             X = edited_df[feature_names].astype(float).values
         except Exception as e:
             st.error(f"Could not parse table data as numeric: {e}")
             st.session_state.run_pca = False
             return
+    
+        n_samples = X.shape[0]
+        if n_samples < 2:
+            st.warning("Need at least 2 data points for PCA.")
+            st.session_state.run_pca = False
+            return
+        else:
+            try:
+                X = edited_df[feature_names].astype(float).values
+            except Exception as e:
+                st.error(f"Could not parse table data as numeric: {e}")
+                st.session_state.run_pca = False
+                return
 
 
         # ---------- Prepare X ----------
