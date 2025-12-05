@@ -699,10 +699,6 @@ def main():
             st.error(f"Could not read CSV: {e}")
 
 
-    # 3) Now define feature_names and num_features from the CURRENT table
-    feature_names = list(st.session_state.data_df.columns)
-    num_features = len(feature_names)
-
     # 4) Show editor using the stored dataframe
     edited_df = st.data_editor(
         st.session_state.data_df,
@@ -715,7 +711,9 @@ def main():
     st.session_state.data_df = edited_df
 
 
-    st.session_state.data_df = edited_df
+    # 3) Now define feature_names and num_features from the CURRENT table
+    feature_names = list(st.session_state.data_df.columns)
+    num_features = len(feature_names)
 
     if "run_pca" not in st.session_state:
         st.session_state.run_pca = False
