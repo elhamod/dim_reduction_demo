@@ -339,28 +339,22 @@ class StreamlitLossCallback(TrainingCallback):
         super().__init__()
         self.loss_placeholder = loss_placeholder
 
-    def on_log(self, training_config, logs, **kwargs):
-        """
-        Called by Pythae at the end of each epoch (see BaseTrainer.train).
-        `logs` is a dict; for example it typically contains
-        'train_loss' and optionally 'eval_loss', plus 'epoch'.
-        """
-        
-        print("my logs", logs)
-        train_loss = logs.get("train_loss", None)
-        eval_loss = logs.get("eval_loss", None)
-        epoch = logs.get("epoch", None)
+    def on_log(self, training_config, metrics, **kwargs):
+        # print("my logs", logs)
+        # train_loss = logs.get("train_loss", None)
+        # eval_loss = logs.get("eval_loss", None)
+        # epoch = logs.get("epoch", None)
 
-        parts = []
-        if epoch is not None:
-            parts.append(f"Epoch: {epoch}")
-        if train_loss is not None:
-            parts.append(f"train_loss = {train_loss:.4f}")
-        if eval_loss is not None:
-            parts.append(f"eval_loss = {eval_loss:.4f}")
+        # parts = []
+        # if epoch is not None:
+        #     parts.append(f"Epoch: {epoch}")
+        # if train_loss is not None:
+        #     parts.append(f"train_loss = {metrics["train_epoch_loss]:.4f}")
+        # if eval_loss is not None:
+        #     parts.append(f"eval_loss = {eval_loss:.4f}")
 
-        if parts:
-            self.loss_placeholder.markdown("**VAE training:** " + " | ".join(parts))
+        # if parts:
+        self.loss_placeholder.markdown(f"**VAE training loss** = {metrics["train_epoch_loss]:.4f}")
 
 
 def train_pythae_vae(
