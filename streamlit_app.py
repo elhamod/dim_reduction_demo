@@ -446,9 +446,14 @@ class StreamlitLossCallback(TrainingCallback):
     def __init__(self, loss_placeholder):
         super().__init__()
         self.loss_placeholder = loss_placeholder
+        self.best_train_loss = np.inf
+        self.num_epochs = 0
 
     def on_log(self, training_config, logs, **kwargs):
-        print("my logs", logs)
+        print("hi", kwargs)
+        self.num_epochs = self.num_epochs + 1
+        
+        # print("my logs", logs)
         # train_loss = logs.get("train_loss", None)
         # eval_loss = logs.get("eval_loss", None)
         # epoch = logs.get("epoch", None)
@@ -463,7 +468,10 @@ class StreamlitLossCallback(TrainingCallback):
 
         # if parts:
         loss = logs["train_epoch_loss"]
-        self.loss_placeholder.markdown(f"**VAE training loss** = {loss:.4f}")
+        if loss < self.best_train_loss:
+            self.best_train_loss = loss
+        if self.num_epochs % 100 == 0:
+            self.loss_placeholder.markdown(f"**VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
 
 
 def train_pythae_vae(
