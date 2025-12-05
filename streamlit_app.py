@@ -633,7 +633,18 @@ def main():
     # Sidebar controls
     with st.sidebar:
         st.header("Settings")
-        num_features = st.slider("Number of features (dimensions)", 2, 10, 3)
+        
+        if "num_features" not in st.session_state:
+            st.session_state.num_features = 3   # initial default
+
+        num_features = st.slider(
+            "Number of features (dimensions)",
+            min_value=1,
+            max_value=10,
+            value=st.session_state.num_features,
+            key="num_features_slider",
+        )
+        
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
         show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
 
@@ -672,17 +683,21 @@ def main():
         try:
             df_csv = pd.read_csv(uploaded_file)
             df_num = df_csv.select_dtypes(include="number")
-
+    
             if df_num.shape[1] == 0:
                 st.warning("Uploaded CSV has no numeric columns; keeping existing table.")
             else:
                 # limit to first 10 numeric columns
                 if df_num.shape[1] > 10:
                     df_num = df_num.iloc[:, :10]
-
+    
                 st.session_state.data_df = df_num.copy()
+    
+                # 🔥 update num_features based on CSV
+                st.session_state.num_features = df_num.shape[1]
         except Exception as e:
             st.error(f"Could not read CSV: {e}")
+
 
     # 3) Now define feature_names and num_features from the CURRENT table
     feature_names = list(st.session_state.data_df.columns)
