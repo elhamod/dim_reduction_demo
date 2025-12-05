@@ -689,7 +689,7 @@ def main():
         )
 
         # 2) If a CSV is uploaded, replace the table with its numeric columns
-        if uploaded_file is not None:
+        if uploaded_file is not None: # and "csv_loaded" not in st.session_state:
             try:
                 df_csv = pd.read_csv(uploaded_file)
                 df_num = df_csv.select_dtypes(include="number")
@@ -705,6 +705,7 @@ def main():
         
                     # 🔥 update num_features based on CSV
                     st.session_state.num_features = df_num.shape[1]
+                    # st.session_state.csv_loaded = True
             except Exception as e:
                 st.error(f"Could not read CSV: {e}")
         
@@ -714,7 +715,7 @@ def main():
         num_features = st.slider(
             "Number of features (dimensions)",
             1, 10,
-            value=st.session_state.num_features,
+            # value=st.session_state.num_features,
             key="num_features",     # ⬅ same key name
         )
         
@@ -742,28 +743,39 @@ def main():
 
     # --- persistent table state in main area ---
     # 1) Initialize if not present
+    # num_features is whatever the slider currently says
+    num_features = st.session_state.num_features
+    
+    # init data_df if missing
     if "data_df" not in st.session_state:
         st.session_state.data_df = pd.DataFrame(
             np.random.randn(6, num_features),
-            columns=[f"x{i+1}" for i in range(num_features)]
+            columns=[f"x{i+1}" for i in range(num_features)],
         )
     else:
-        # 2) If the slider changed the number of features, adjust columns
         df = st.session_state.data_df
         current_n = df.shape[1]
     
         if current_n != num_features:
             new_cols = [f"x{i+1}" for i in range(num_features)]
-    
-            # keep existing values where names match, random for new cols
             new_df = pd.DataFrame(index=df.index)
+    
+            # keep any existing columns that still fit
             for c in new_cols:
                 if c in df.columns:
                     new_df[c] = df[c]
                 else:
-                    new_df[c] = np.random.randn(len(df))
+                    new_df[c] = np.random.randn(len(df))  # random for new cols
     
             st.session_state.data_df = new_df
+
+edited_df = st.data_editor(
+    st.session_state.data_df,
+    key="data_editor",
+    num_rows="dynamic",
+    width="stretch",  # instead of use_container_width
+)
+st.session_state.data_df = edited_df
         
 
 
