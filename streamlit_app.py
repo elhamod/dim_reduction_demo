@@ -529,8 +529,8 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
-        # scheduler_cls="ReduceLROnPlateau",
-        # scheduler_params={"patience": 500, "factor": 0.9}
+        scheduler_cls="ReduceLROnPlateau",
+        scheduler_params={"patience": 500, "factor": 0.9}
         # scheduler_cls="MultiStepLR",
         # scheduler_params={
         #     "milestones": [200, 350, 500, 750, 1000],
