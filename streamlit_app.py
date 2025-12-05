@@ -321,7 +321,7 @@ def make_3d_pca_geometry(
 from typing import List
 import torch.nn as nn
 from pythae.models.nn import BaseDecoder, BaseEncoder
-from pythae.model.base.base_utils import ModelOutput
+from pythae.models.base.base_utils import ModelOutput
 
 layer_1_size = 3
 class Encoder_AE_MLP(BaseEncoder):
