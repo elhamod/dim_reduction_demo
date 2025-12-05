@@ -369,8 +369,9 @@ class Encoder_VAE_MLP(BaseEncoder):
 
         layers = nn.ModuleList()
 
-        layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.ReLU()))
-        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.ReLU()))
+        layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.Tanh()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
 
         self.layers = layers
         self.depth = len(layers)
@@ -407,8 +408,9 @@ class Decoder_AE_MLP(BaseDecoder):
 
         layers = nn.ModuleList()
 
-        layers.append(nn.Sequential(nn.Linear(args.latent_dim, layer_1_size), nn.ReLU()))
-        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.ReLU()))
+        layers.append(nn.Sequential(nn.Linear(args.latent_dim, layer_1_size), nn.Tanh()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
 
         layers.append(
            nn.Linear(layer_1_size, int(np.prod(args.input_dim)))
