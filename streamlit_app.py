@@ -229,7 +229,7 @@ def make_3d_pca_geometry(
             xaxis_title=selected_features[0] + axis_suffix,
             yaxis_title=selected_features[1] + axis_suffix,
             zaxis_title=selected_features[2] + axis_suffix,
-            aspectmode="cube",           # 🔥 SAME SCALE ON ALL AXES
+            aspectmode="data",           # 🔥 SAME SCALE ON ALL AXES
         ),
         title=title_suffix,
         height=750,
@@ -595,7 +595,7 @@ def make_vae_latent_and_manifold_figures(
             xaxis_title=selected_features[0],
             yaxis_title=selected_features[1],
             zaxis_title=selected_features[2],
-            aspectmode="cube",           # 🔥 SAME SCALE ON ALL AXES
+            aspectmode="data",           # 🔥 SAME SCALE ON ALL AXES
         ),
         title="VAE nonlinear manifold & reconstruction (original space)",
         height=750,
