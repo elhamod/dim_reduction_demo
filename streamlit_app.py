@@ -324,7 +324,7 @@ import torch.nn as nn
 from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.models.base.base_utils import ModelOutput
 
-layer_1_size = 3
+layer_1_size = 16
 # class Encoder_AE_MLP(BaseEncoder):
 #     def __init__(self, args: dict):
 #         BaseEncoder.__init__(self)
@@ -371,7 +371,7 @@ class Encoder_VAE_MLP(BaseEncoder):
 
         layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.Tanh()))
         layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
-        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
+        # layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
 
         self.layers = layers
         self.depth = len(layers)
@@ -410,7 +410,7 @@ class Decoder_AE_MLP(BaseDecoder):
 
         layers.append(nn.Sequential(nn.Linear(args.latent_dim, layer_1_size), nn.Tanh()))
         layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
-        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
+        # layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
 
         layers.append(
            nn.Linear(layer_1_size, int(np.prod(args.input_dim)))
