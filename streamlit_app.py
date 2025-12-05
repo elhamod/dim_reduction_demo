@@ -890,7 +890,7 @@ def main():
             with st.spinner("Training a small VAE on your data..."):
                 vae_callback = StreamlitLossCallback(loss_label)
                 
-                model, Z, X_recon_vae, vae_history = train_pythae_vae(
+                model, Z, X_recon_vae = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
                     num_epochs = 5000,
