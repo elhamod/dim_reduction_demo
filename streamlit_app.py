@@ -324,7 +324,7 @@ import torch.nn as nn
 from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.models.base.base_utils import ModelOutput
 
-# layer_1_size = 3
+layer_1_size = 3
 # class Encoder_AE_MLP(BaseEncoder):
 #     def __init__(self, args: dict):
 #         BaseEncoder.__init__(self)
