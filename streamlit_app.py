@@ -411,8 +411,8 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
-        optimizer_cls="Adam",
-        optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
+        optimizer_cls="RMSprop",
+        # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
 
     # 3) Training pipeline (handles DataProcessor / BaseDataset internally)
