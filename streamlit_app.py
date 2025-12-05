@@ -12,6 +12,11 @@ from pythae.models import VAE, VAEConfig
 from pythae.trainers import BaseTrainerConfig
 from pythae.pipelines import TrainingPipeline
 
+# Shared colors
+ORIG_COLOR = "royalblue"
+RECON_COLOR = "darkorange"
+ERROR_COLOR = "red"
+
 
 # ============================================================
 # PCA utilities
@@ -104,12 +109,13 @@ def make_3d_pca_geometry(
             y=X3[:, 1],
             z=X3[:, 2],
             mode="markers",
-            marker=dict(size=6),
+            marker=dict(size=6, color=ORIG_COLOR),
             name=f"Original{axis_suffix}",
             hovertext=[point_hover(i, "Original") for i in range(n)],
             hoverinfo="text",
         )
     )
+
 
     # reconstructed points
     fig.add_trace(
@@ -118,7 +124,7 @@ def make_3d_pca_geometry(
             y=X3_recon[:, 1],
             z=X3_recon[:, 2],
             mode="markers",
-            marker=dict(size=4, symbol="x"),
+            marker=dict(size=4, symbol="x", color=RECON_COLOR),
             name=f"Reconstructed{axis_suffix}",
             hovertext=[point_hover(i, "Reconstructed") for i in range(n)],
             hoverinfo="text",
@@ -133,7 +139,7 @@ def make_3d_pca_geometry(
                 y=[X3[i, 1], X3_recon[i, 1]],
                 z=[X3[i, 2], X3_recon[i, 2]],
                 mode="lines",
-                line=dict(width=2, color="red"),
+                line=dict(width=2, color=ERROR_COLOR),
                 showlegend=(i == 0),
                 name="Reconstruction error (plotted space)",
                 hoverinfo="text",
@@ -392,97 +398,196 @@ def train_pythae_vae(
 
 
 def make_vae_latent_and_manifold_figures(
-    model, Z, X_recon_vae, feature_names, selected_features, grid_points=15
+    model, Z, X, X_recon_vae, feature_names, selected_features, grid_points=15
 ):
     """
-    - 2D latent scatter with hovertext.
-    - Latent grid → decoded → 3D manifold surface in original feature coordinates.
+    - Latent scatter (1D or 2D)
+    - Manifold: line (1D latent) or surface (2D latent) in original coordinates
+    - Uses PCA colors for datapoints & black for VAE geometry
+    - Shows projection errors (original -> VAE recon) in original space
     """
     device = next(model.parameters()).device
     idxs = [feature_names.index(f) for f in selected_features]
+    latent_dim = Z.shape[1]
 
-    # ---------- Latent scatter (assumes 2D) ----------
-    fig_latent = go.Figure()
-    fig_latent.add_trace(
-        go.Scatter(
-            x=Z[:, 0],
-            y=Z[:, 1],
+    # ---------- Latent scatter ----------
+    if latent_dim == 1:
+        fig_latent = go.Figure()
+        fig_latent.add_trace(
+            go.Scatter(
+                x=np.arange(Z.shape[0]),
+                y=Z[:, 0],
+                mode="markers+lines",
+                line=dict(color="black"),
+                marker=dict(color="black"),
+                name="Latent points",
+                hoverinfo="text",
+                hovertext=[
+                    f"Point #{i}<br>z1 = {Z[i,0]:.4f}" for i in range(Z.shape[0])
+                ],
+            )
+        )
+        fig_latent.update_layout(
+            xaxis_title="Sample index",
+            yaxis_title="z1",
+            title="VAE latent space (1D)",
+            height=500,
+        )
+    else:
+        fig_latent = go.Figure()
+        fig_latent.add_trace(
+            go.Scatter(
+                x=Z[:, 0],
+                y=Z[:, 1],
+                mode="markers",
+                marker=dict(color="black"),
+                name="Latent points",
+                hoverinfo="text",
+                hovertext=[
+                    f"Point #{i}<br>z1 = {Z[i,0]:.4f}<br>z2 = {Z[i,1]:.4f}"
+                    for i in range(Z.shape[0])
+                ],
+            )
+        )
+        fig_latent.update_layout(
+            xaxis_title="z1",
+            yaxis_title="z2",
+            title="VAE latent space (2D)",
+            height=500,
+        )
+
+    # ---------- Manifold & projection errors in original space ----------
+    X3_orig = X[:, idxs]
+    X3_recon = X_recon_vae[:, idxs]
+
+    fig_manifold = go.Figure()
+
+    # Original points (same color as PCA)
+    fig_manifold.add_trace(
+        go.Scatter3d(
+            x=X3_orig[:, 0],
+            y=X3_orig[:, 1],
+            z=X3_orig[:, 2],
             mode="markers",
-            name="Latent points",
+            marker=dict(size=6, color=ORIG_COLOR),
+            name="Original (VAE view)",
             hoverinfo="text",
             hovertext=[
-                f"Point #{i}<br>z1 = {Z[i,0]:.4f}<br>z2 = {Z[i,1]:.4f}"
-                for i in range(Z.shape[0])
+                f"Point #{i}<br>"
+                + "<br>".join(
+                    f"{selected_features[j]} = {X3_orig[i, j]:.4f}" for j in range(3)
+                )
+                for i in range(X3_orig.shape[0])
             ],
         )
     )
-    fig_latent.update_layout(
-        xaxis_title="z1",
-        yaxis_title="z2",
-        title="VAE latent space (2D)",
-        height=500,
-    )
 
-    # ---------- Latent grid → decoded manifold ----------
-    z1_min, z1_max = Z[:, 0].min(), Z[:, 0].max()
-    z2_min, z2_max = Z[:, 1].min(), Z[:, 1].max()
-    if z1_min == z1_max:
-        z1_min -= 1.0
-        z1_max += 1.0
-    if z2_min == z2_max:
-        z2_min -= 1.0
-        z2_max += 1.0
-
-    z1_lin = np.linspace(z1_min, z1_max, grid_points)
-    z2_lin = np.linspace(z2_min, z2_max, grid_points)
-    Z1, Z2 = np.meshgrid(z1_lin, z2_lin)
-    grid_z = np.stack([Z1.ravel(), Z2.ravel()], axis=1)
-
-    with torch.no_grad():
-        z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
-        decoded_out = model.decoder(z_tensor)
-        decoded = decoded_out["reconstruction"].cpu().numpy()
-
-    decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
-
-    # 3D manifold surface + VAE recon points
-    fig_manifold = go.Figure()
-
-    fig_manifold.add_trace(
-        go.Surface(
-            x=decoded3[:, :, 0],
-            y=decoded3[:, :, 1],
-            z=decoded3[:, :, 2],
-            opacity=0.5,
-            showscale=False,
-            name="Decoded latent grid",
-            hoverinfo="text",
-            hovertext=(
-                "Nonlinear manifold: decoded VAE grid<br>"
-                "Each surface point comes from decoding a regular grid in latent (z1, z2)."
-            ),
-        )
-    )
-
+    # VAE recon points (same color as PCA recon)
     fig_manifold.add_trace(
         go.Scatter3d(
-            x=X_recon_vae[:, idxs[0]],
-            y=X_recon_vae[:, idxs[1]],
-            z=X_recon_vae[:, idxs[2]],
+            x=X3_recon[:, 0],
+            y=X3_recon[:, 1],
+            z=X3_recon[:, 2],
             mode="markers",
-            marker=dict(size=4),
+            marker=dict(size=4, symbol="x", color=RECON_COLOR),
             name="VAE recon points",
             hoverinfo="text",
             hovertext=[
                 f"Decoded point #{i}<br>"
                 + "<br>".join(
-                    f"{selected_features[j]} = {X_recon_vae[i, idxs[j]]:.4f}"
-                    for j in range(3)
+                    f"{selected_features[j]} = {X3_recon[i, j]:.4f}" for j in range(3)
                 )
-                for i in range(X_recon_vae.shape[0])
+                for i in range(X3_recon.shape[0])
             ],
         )
     )
+
+    # Projection error lines (original -> VAE recon), black
+    for i in range(X3_orig.shape[0]):
+        fig_manifold.add_trace(
+            go.Scatter3d(
+                x=[X3_orig[i, 0], X3_recon[i, 0]],
+                y=[X3_orig[i, 1], X3_recon[i, 1]],
+                z=[X3_orig[i, 2], X3_recon[i, 2]],
+                mode="lines",
+                line=dict(width=2, color=ERROR_COLOR),
+                showlegend=(i == 0),
+                name="VAE reconstruction error",
+                hoverinfo="skip",
+            )
+        )
+
+    # Nonlinear manifold from latent grid (black)
+    if latent_dim == 1:
+        # 1D manifold: a curve in 3D
+        z1_min, z1_max = Z[:, 0].min(), Z[:, 0].max()
+        if z1_min == z1_max:
+            z1_min -= 1.0
+            z1_max += 1.0
+        z1_lin = np.linspace(z1_min, z1_max, grid_points)
+        grid_z = z1_lin.reshape(-1, 1)
+
+        with torch.no_grad():
+            z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
+            decoded_out = model.decoder(z_tensor)
+            decoded = decoded_out["reconstruction"].cpu().numpy()
+
+        decoded3 = decoded[:, idxs]
+        fig_manifold.add_trace(
+            go.Scatter3d(
+                x=decoded3[:, 0],
+                y=decoded3[:, 1],
+                z=decoded3[:, 2],
+                mode="lines",
+                line=dict(width=3, color="black"),
+                name="Decoded latent curve",
+                hoverinfo="text",
+                hovertext=(
+                    "Nonlinear manifold: decoded VAE curve<br>"
+                    "Each point comes from decoding a z1 value in latent space."
+                ),
+            )
+        )
+    else:
+        # 2D manifold: a surface in 3D
+        z1_min, z1_max = Z[:, 0].min(), Z[:, 0].max()
+        z2_min, z2_max = Z[:, 1].min(), Z[:, 1].max()
+        if z1_min == z1_max:
+            z1_min -= 1.0
+            z1_max += 1.0
+        if z2_min == z2_max:
+            z2_min -= 1.0
+            z2_max += 1.0
+
+        z1_lin = np.linspace(z1_min, z1_max, grid_points)
+        z2_lin = np.linspace(z2_min, z2_max, grid_points)
+        Z1, Z2 = np.meshgrid(z1_lin, z2_lin)
+        grid_z = np.stack([Z1.ravel(), Z2.ravel()], axis=1)
+
+        with torch.no_grad():
+            z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
+            decoded_out = model.decoder(z_tensor)
+            decoded = decoded_out["reconstruction"].cpu().numpy()
+
+        decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
+
+        fig_manifold.add_trace(
+            go.Surface(
+                x=decoded3[:, :, 0],
+                y=decoded3[:, :, 1],
+                z=decoded3[:, :, 2],
+                opacity=0.5,
+                showscale=False,
+                name="Decoded latent grid",
+                hoverinfo="text",
+                hovertext=(
+                    "Nonlinear manifold: decoded VAE grid<br>"
+                    "Each surface point comes from decoding a regular grid in (z1, z2)."
+                ),
+                surfacecolor=np.zeros_like(decoded3[:, :, 0]),
+                colorscale=[[0, "black"], [1, "black"]],
+            )
+        )
 
     fig_manifold.update_layout(
         scene=dict(
@@ -490,11 +595,12 @@ def make_vae_latent_and_manifold_figures(
             yaxis_title=selected_features[1],
             zaxis_title=selected_features[2],
         ),
-        title="VAE nonlinear manifold (decoded latent grid in original space)",
+        title="VAE nonlinear manifold & reconstruction (original space)",
         height=750,
     )
 
     return fig_latent, fig_manifold
+
 
 
 # ============================================================
@@ -531,6 +637,9 @@ def main():
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
         show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
 
+        uploaded_file = st.file_uploader(
+            "Upload CSV (optional, numeric columns only)", type=["csv"]
+        )
 
 
         st.markdown("---")
@@ -538,8 +647,10 @@ def main():
         vae_epochs = 200
         latent_dim = 2
         if use_vae:
+            latent_dim = st.radio("VAE latent dimension", [1, 2], index=1)
             vae_epochs = st.slider("VAE training epochs", 50, 800, 250, step=50)
-            st.caption("Latent dimension is fixed at 2 for 2D manifold visualization.")
+            st.caption("Latent dimension 1 → curve; 2 → surface manifold.")
+
 
         feature_names = [f"x{i+1}" for i in range(num_features)]
 
@@ -593,11 +704,42 @@ def main():
 
     if st.session_state.run_pca:
         # ---------- Prepare X ----------
+        # If a CSV is uploaded, we use it; otherwise we use the table.
+        if uploaded_file is not None:
+            try:
+                df_csv = pd.read_csv(uploaded_file)
+                df_num = df_csv.select_dtypes(include="number")
+    
+                if df_num.shape[1] == 0:
+                    st.error("Uploaded CSV has no numeric columns.")
+                    st.session_state.run_pca = False
+                    return
+    
+                # limit to first 10 numeric columns
+                df_num = df_num.iloc[:, :10]
+                feature_names = list(df_num.columns)
+                X = df_num.values
+            except Exception as e:
+                st.error(f"Could not read CSV: {e}")
+                st.session_state.run_pca = False
+                return
+    else:
         try:
             X = edited_df[feature_names].astype(float).values
         except Exception as e:
-            st.error(f"Could not parse data as numeric: {e}")
+            st.error(f"Could not parse table data as numeric: {e}")
+            st.session_state.run_pca = False
             return
+
+
+        # ---------- Prepare X ----------
+    try:
+        X = edited_df[feature_names].astype(float).values
+    except Exception as e:
+        st.error(f"Could not parse data as numeric: {e}")
+        st.session_state.run_pca = False
+        return
+
 
         n_samples = X.shape[0]
         if n_samples < 2:
@@ -700,11 +842,13 @@ def main():
                     fig_latent, fig_manifold = make_vae_latent_and_manifold_figures(
                         model,
                         Z,
+                        X,
                         X_recon_vae,
                         feature_names,
                         selected_features_vae,
                         grid_points=18,
                     )
+
                     st.plotly_chart(fig_latent, use_container_width=True)
                     st.plotly_chart(fig_manifold, use_container_width=True)
             else:
