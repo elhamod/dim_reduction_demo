@@ -9,6 +9,7 @@ import torch
 
 
 from pythae.models import VAE, VAEConfig
+from pythae.models import AE, AEConfig
 from pythae.trainers import BaseTrainerConfig
 from pythae.pipelines import TrainingPipeline
 
@@ -321,7 +322,6 @@ def make_3d_pca_geometry(
 import numpy as np
 import torch
 
-from pythae.models import VAE, VAEConfig
 from pythae.trainers import BaseTrainerConfig
 from pythae.pipelines import TrainingPipeline
 from torch.utils.data import DataLoader, TensorDataset
@@ -389,11 +389,16 @@ def train_pythae_vae(
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # 1) Build VAE model config for tabular data
-    model_config = VAEConfig(
+    # model_config = VAEConfig(
+    #     input_dim=(n_features,),   # 1D vector input
+    #     latent_dim=latent_dim
+    # )
+    # model = VAE(model_config).to(device)
+    model_config = AEConfig(
         input_dim=(n_features,),   # 1D vector input
         latent_dim=latent_dim
     )
-    model = VAE(model_config).to(device)
+    model = AE(model_config).to(device)
 
     # 2) Trainer config (this is the correct class in 0.1.2)
     train_config = BaseTrainerConfig(
