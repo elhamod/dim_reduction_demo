@@ -473,7 +473,7 @@ class StreamlitLossCallback(TrainingCallback):
         if loss < self.best_train_loss:
             self.best_train_loss = loss
         if self.num_epochs % 100 == 0:
-            self.loss_placeholder.markdown(f"**Epoch** = {global_step}. **VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
+            self.loss_placeholder.markdown(f"**Epoch** = {kwargs["global_step"]}. **VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
 
 
 def train_pythae_vae(
