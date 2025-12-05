@@ -879,10 +879,10 @@ def main():
             st.subheader("5. VAE nonlinear embedding (Pythae)")
 
             # placeholder for live loss updates
-            loss_label = st.spinner("Training a small VAE on your data...")
+            training_status = st.empty()
 
-            with loss_label:
-                vae_callback = StreamlitLossCallback(loss_label)
+            with st.spinner("Training a small VAE on your data..."):
+                vae_callback = StreamlitLossCallback(training_status)
                 
                 model, Z, X_recon_vae = train_pythae_vae(
                     X,
