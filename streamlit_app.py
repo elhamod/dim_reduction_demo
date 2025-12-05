@@ -325,38 +325,40 @@ from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.models.base.base_utils import ModelOutput
 
 layer_1_size = 32
-# class Encoder_AE_MLP(BaseEncoder):
-#     def __init__(self, args: dict):
-#         BaseEncoder.__init__(self)
-#         self.input_dim = args.input_dim
-#         self.latent_dim = args.latent_dim
+class Encoder_AE_MLP(BaseEncoder):
+    def __init__(self, args: dict):
+        BaseEncoder.__init__(self)
+        self.input_dim = args.input_dim
+        self.latent_dim = args.latent_dim
     
-#         layers = nn.ModuleList()
+        layers = nn.ModuleList()
 
-#         layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.ReLU()))
+        layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.Tanh()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
+        # layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.Tanh()))
 
-#         self.layers = layers
-#         self.depth = len(layers)
+        self.layers = layers
+        self.depth = len(layers)
 
-#         self.embedding = nn.Linear(layer_1_size, self.latent_dim)
+        self.embedding = nn.Linear(layer_1_size, self.latent_dim)
 
-#     def forward(self, x, output_layer_levels: List[int] = None):
-#         output = ModelOutput()
+    def forward(self, x, output_layer_levels: List[int] = None):
+        output = ModelOutput()
 
-#         max_depth = self.depth
+        max_depth = self.depth
 
-#         out = x.reshape(-1, np.prod(self.input_dim))
+        out = x.reshape(-1, np.prod(self.input_dim))
 
-#         for i in range(max_depth):
-#             out = self.layers[i](out)
+        for i in range(max_depth):
+            out = self.layers[i](out)
 
-#             if output_layer_levels is not None:
-#                 if i + 1 in output_layer_levels:
-#                     output[f"embedding_layer_{i+1}"] = out
-#             if i + 1 == self.depth:
-#                 output["embedding"] = self.embedding(out)
+            if output_layer_levels is not None:
+                if i + 1 in output_layer_levels:
+                    output[f"embedding_layer_{i+1}"] = out
+            if i + 1 == self.depth:
+                output["embedding"] = self.embedding(out)
 
-#         return output
+        return output
 
 
 
@@ -507,16 +509,16 @@ def train_pythae_vae(
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # 1) Build VAE model config for tabular data
-    model_config = VAEConfig(
-        input_dim=(n_features,),   # 1D vector input
-        latent_dim=latent_dim
-    )
-    model = VAE(model_config, encoder=Encoder_VAE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
-    # model_config = AEConfig(
+    # model_config = VAEConfig(
     #     input_dim=(n_features,),   # 1D vector input
     #     latent_dim=latent_dim
     # )
-    # model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
+    # model = VAE(model_config, encoder=Encoder_VAE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
+    model_config = AEConfig(
+        input_dim=(n_features,),   # 1D vector input
+        latent_dim=latent_dim
+    )
+    model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
 
     # print(model)
     
