@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScalerF
 import plotly.graph_objects as go
 
 import numpy as np
@@ -506,7 +506,7 @@ def train_pythae_vae(
     # )
     # model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
 
-    print(model)
+    # print(model)
     
     # 2) Trainer config (this is the correct class in 0.1.2)
     train_config = BaseTrainerConfig(
@@ -542,8 +542,8 @@ def train_pythae_vae(
         callbacks.append(loss_callback)
         
     # Train directly from numpy array
-    print(X_scaled.shape, X_scaled)
-    raise
+    # print(X_scaled.shape, X_scaled)
+    # raise
     pipeline(train_data=X_scaled, callbacks=callbacks)
 
     # After training, the trained model is stored in pipeline.model
