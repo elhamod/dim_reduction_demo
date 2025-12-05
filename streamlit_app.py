@@ -411,6 +411,12 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
+        scheduler_cls="MultiStepLR",
+        scheduler_params={
+            "milestones": [200, 350, 500, 750, 1000],
+            "gamma": 10 ** (-1 / 5),
+            # "verbose": True,
+        },
         optimizer_cls="RMSprop",
         # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
