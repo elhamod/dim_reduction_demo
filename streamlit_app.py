@@ -452,7 +452,7 @@ class StreamlitLossCallback(TrainingCallback):
         self.num_epochs = 0
 
     def on_log(self, training_config, logs, **kwargs):
-        print("hi", kwargs)
+        # print("hi", kwargs)
         self.num_epochs = self.num_epochs + 1
         
         # print("my logs", logs)
