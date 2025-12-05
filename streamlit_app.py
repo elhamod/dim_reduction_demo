@@ -346,7 +346,7 @@ class StreamlitLossCallback(TrainingCallback):
         'train_loss' and optionally 'eval_loss', plus 'epoch'.
         """
         
-        print(logs)
+        print("my logs", logs)
         train_loss = logs.get("train_loss", None)
         eval_loss = logs.get("eval_loss", None)
         epoch = logs.get("epoch", None)
