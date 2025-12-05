@@ -1048,7 +1048,7 @@ def main():
                     latent_dim=latent_dim,
                     num_epochs = vae_epochs,
                     # batch_size=2,
-                    learning_rate=5e-5,
+                    learning_rate=1e-4,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
