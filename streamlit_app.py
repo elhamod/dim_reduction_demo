@@ -537,7 +537,7 @@ def train_pythae_vae(
         #     "gamma": 10 ** (-1 / 5),
         #     # "verbose": True,
         # },
-        optimizer_cls="SGD"#"RMSprop",
+        optimizer_cls="RMSprop",
         # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
 
@@ -1048,7 +1048,7 @@ def main():
                     latent_dim=latent_dim,
                     num_epochs = vae_epochs,
                     # batch_size=2,
-                    learning_rate=1e-4,
+                    learning_rate=5e-5,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
