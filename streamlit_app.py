@@ -899,13 +899,6 @@ def main():
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
-    
-            if len(vae_history) > 0:
-                st.success(
-                    f"VAE training finished in ~{len(vae_history)*20} epochs "
-                    f"(chunks), final MSE = {vae_history[-1]:.6f}, "
-                    f"threshold = {vae_threshold:.6f}"
-                )
 
 
 
