@@ -340,7 +340,7 @@ class StreamlitLossCallback(TrainingCallback):
         self.loss_placeholder = loss_placeholder
 
     def on_log(self, training_config, logs, **kwargs):
-        # print("my logs", logs)
+        print("my logs", logs)
         # train_loss = logs.get("train_loss", None)
         # eval_loss = logs.get("eval_loss", None)
         # epoch = logs.get("epoch", None)
@@ -363,7 +363,7 @@ def train_pythae_vae(
     latent_dim: int = 2,
     num_epochs: int = 5000,
     batch_size: int = 32,
-    learning_rate: float = 1e-3,
+    learning_rate: float = 1e-4,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
@@ -887,9 +887,9 @@ def main():
                 model, Z, X_recon_vae = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
-                    num_epochs = 5000,
-                    batch_size=16,
-                    learning_rate=1e-3,
+                    # num_epochs = 5000,
+                    # batch_size=16,
+                    # learning_rate=1e-3,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
