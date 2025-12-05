@@ -362,7 +362,7 @@ def train_pythae_vae(
     X: np.ndarray,
     latent_dim: int = 2,
     num_epochs: int = 5000,
-    batch_size: int = 32,
+    batch_size: int = 64,
     learning_rate: float = 1e-4,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
@@ -404,6 +404,8 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
+        optimizer_cls="Adam",
+        optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
 
     # 3) Training pipeline (handles DataProcessor / BaseDataset internally)
