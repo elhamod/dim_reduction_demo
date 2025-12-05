@@ -537,7 +537,7 @@ def train_pythae_vae(
         #     "gamma": 10 ** (-1 / 5),
         #     # "verbose": True,
         # },
-        optimizer_cls="RMSprop",
+        # optimizer_cls="RMSprop",
         # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
 
