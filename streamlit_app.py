@@ -747,8 +747,24 @@ def main():
             np.random.randn(6, num_features),
             columns=[f"x{i+1}" for i in range(num_features)]
         )
-
+    else:
+        # 2) If the slider changed the number of features, adjust columns
+        df = st.session_state.data_df
+        current_n = df.shape[1]
     
+        if current_n != num_features:
+            new_cols = [f"x{i+1}" for i in range(num_features)]
+    
+            # keep existing values where names match, random for new cols
+            new_df = pd.DataFrame(index=df.index)
+            for c in new_cols:
+                if c in df.columns:
+                    new_df[c] = df[c]
+                else:
+                    new_df[c] = np.random.randn(len(df))
+    
+            st.session_state.data_df = new_df
+        
 
 
     # 4) Show editor using the stored dataframe
