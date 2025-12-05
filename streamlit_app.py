@@ -363,7 +363,7 @@ def train_pythae_vae(
     latent_dim: int = 2,
     num_epochs: int = 5000,
     batch_size: int = 64,
-    learning_rate: float = 1e-3,
+    learning_rate: float = 5e-3,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
@@ -411,12 +411,16 @@ def train_pythae_vae(
         steps_predict=None,
         no_cuda=(device == "cpu"),
         keep_best_on_train=True,
-        scheduler_cls="MultiStepLR",
-        scheduler_params={
-            "milestones": [200, 350, 500, 750, 1000],
-            "gamma": 10 ** (-1 / 5),
-            # "verbose": True,
-        },
+        scheduler_cls="ReduceLROnPlateau",
+        scheduler_params={"patience": 500, "factor": 0.5}
+        
+        # scheduler_cls="MultiStepLR",
+        # scheduler_params={
+        #     "milestones": [200, 350, 500, 750, 1000],
+        #     "gamma": 10 ** (-1 / 5),
+        #     # "verbose": True,
+        # },
+        
         # optimizer_cls="RMSprop",
         # optimizer_params={"weight_decay": 0.05, "betas": (0.91, 0.99)}
     )
