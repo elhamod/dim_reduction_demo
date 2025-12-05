@@ -324,39 +324,39 @@ import torch.nn as nn
 from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.models.base.base_utils import ModelOutput
 
-layer_1_size = 3
-class Encoder_AE_MLP(BaseEncoder):
-    def __init__(self, args: dict):
-        BaseEncoder.__init__(self)
-        self.input_dim = args.input_dim
-        self.latent_dim = args.latent_dim
+# layer_1_size = 3
+# class Encoder_AE_MLP(BaseEncoder):
+#     def __init__(self, args: dict):
+#         BaseEncoder.__init__(self)
+#         self.input_dim = args.input_dim
+#         self.latent_dim = args.latent_dim
     
-        layers = nn.ModuleList()
+#         layers = nn.ModuleList()
 
-        layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.ReLU()))
+#         layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.ReLU()))
 
-        self.layers = layers
-        self.depth = len(layers)
+#         self.layers = layers
+#         self.depth = len(layers)
 
-        self.embedding = nn.Linear(layer_1_size, self.latent_dim)
+#         self.embedding = nn.Linear(layer_1_size, self.latent_dim)
 
-    def forward(self, x, output_layer_levels: List[int] = None):
-        output = ModelOutput()
+#     def forward(self, x, output_layer_levels: List[int] = None):
+#         output = ModelOutput()
 
-        max_depth = self.depth
+#         max_depth = self.depth
 
-        out = x.reshape(-1, np.prod(self.input_dim))
+#         out = x.reshape(-1, np.prod(self.input_dim))
 
-        for i in range(max_depth):
-            out = self.layers[i](out)
+#         for i in range(max_depth):
+#             out = self.layers[i](out)
 
-            if output_layer_levels is not None:
-                if i + 1 in output_layer_levels:
-                    output[f"embedding_layer_{i+1}"] = out
-            if i + 1 == self.depth:
-                output["embedding"] = self.embedding(out)
+#             if output_layer_levels is not None:
+#                 if i + 1 in output_layer_levels:
+#                     output[f"embedding_layer_{i+1}"] = out
+#             if i + 1 == self.depth:
+#                 output["embedding"] = self.embedding(out)
 
-        return output
+#         return output
 
 
 
@@ -370,6 +370,7 @@ class Encoder_VAE_MLP(BaseEncoder):
         layers = nn.ModuleList()
 
         layers.append(nn.Sequential(nn.Linear(np.prod(args.input_dim), layer_1_size), nn.ReLU()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.ReLU()))
 
         self.layers = layers
         self.depth = len(layers)
@@ -407,6 +408,7 @@ class Decoder_AE_MLP(BaseDecoder):
         layers = nn.ModuleList()
 
         layers.append(nn.Sequential(nn.Linear(args.latent_dim, layer_1_size), nn.ReLU()))
+        layers.append(nn.Sequential(nn.Linear(layer_1_size, layer_1_size), nn.ReLU()))
 
         layers.append(
            nn.Linear(layer_1_size, int(np.prod(args.input_dim)))
