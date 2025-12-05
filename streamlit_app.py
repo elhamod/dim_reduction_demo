@@ -633,6 +633,30 @@ def main():
     # Sidebar controls
     with st.sidebar:
         st.header("Settings")
+
+        uploaded_file = st.file_uploader(
+            "Upload CSV (optional, numeric columns only)", type=["csv"]
+        )
+
+        # 2) If a CSV is uploaded, replace the table with its numeric columns
+        if uploaded_file is not None:
+            try:
+                df_csv = pd.read_csv(uploaded_file)
+                df_num = df_csv.select_dtypes(include="number")
+        
+                if df_num.shape[1] == 0:
+                    st.warning("Uploaded CSV has no numeric columns; keeping existing table.")
+                else:
+                    # limit to first 10 numeric columns
+                    if df_num.shape[1] > 10:
+                        df_num = df_num.iloc[:, :10]
+        
+                    st.session_state.data_df = df_num.copy()
+        
+                    # 🔥 update num_features based on CSV
+                    st.session_state.num_features = df_num.shape[1]
+            except Exception as e:
+                st.error(f"Could not read CSV: {e}")
         
         if "num_features" not in st.session_state:
             st.session_state.num_features = 3
@@ -657,11 +681,7 @@ def main():
             st.caption("Latent dimension 1 → curve; 2 → surface manifold.")
 
 
-        # feature_names = [f"x{i+1}" for i in range(num_features)]
-
-    uploaded_file = st.file_uploader(
-        "Upload CSV (optional, numeric columns only)", type=["csv"]
-    )
+    
 
     st.subheader("1. Enter / edit your data points")
     st.markdown(
@@ -677,25 +697,7 @@ def main():
             columns=[f"x{i+1}" for i in range(num_features)]
         )
 
-    # 2) If a CSV is uploaded, replace the table with its numeric columns
-    if uploaded_file is not None:
-        try:
-            df_csv = pd.read_csv(uploaded_file)
-            df_num = df_csv.select_dtypes(include="number")
     
-            if df_num.shape[1] == 0:
-                st.warning("Uploaded CSV has no numeric columns; keeping existing table.")
-            else:
-                # limit to first 10 numeric columns
-                if df_num.shape[1] > 10:
-                    df_num = df_num.iloc[:, :10]
-    
-                st.session_state.data_df = df_num.copy()
-    
-                # 🔥 update num_features based on CSV
-                st.session_state.num_features = df_num.shape[1]
-        except Exception as e:
-            st.error(f"Could not read CSV: {e}")
 
 
     # 4) Show editor using the stored dataframe
