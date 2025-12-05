@@ -382,6 +382,8 @@ def train_pythae_vae(
 
     # Pythae expects float32 tensors
     X = X.astype(np.float32)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
     n_features = X.shape[1]
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -419,7 +421,7 @@ def train_pythae_vae(
         callbacks.append(loss_callback)
         
     # Train directly from numpy array
-    pipeline(train_data=X, callbacks=callbacks)
+    pipeline(train_data=X_scaled, callbacks=callbacks)
 
     # After training, the trained model is stored in pipeline.model
     trained_model = pipeline.model.to(device)
@@ -427,7 +429,7 @@ def train_pythae_vae(
 
     # 4) Get reconstructions & latent embeddings using .predict
     with torch.no_grad():
-        X_tensor = torch.from_numpy(X).to(device)
+        X_tensor = torch.from_numpy(X_scaled).to(device)
         out = trained_model.predict(X_tensor)
 
         # According to BaseAE.predict, keys are recon_x and embedding
@@ -435,7 +437,7 @@ def train_pythae_vae(
         X_recon = out.recon_x.detach().cpu().numpy()
         Z = out.embedding.detach().cpu().numpy()
 
-    return trained_model, Z, X_recon
+    return trained_model, Z, scaler.inverse_transform(X_recon)
 
 
 
@@ -894,6 +896,7 @@ def main():
                     # learning_rate=1e-3,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
+                    scaled_space=show_scaled_space,
                 )
 
 
