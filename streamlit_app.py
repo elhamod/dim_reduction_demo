@@ -769,13 +769,7 @@ def main():
     
             st.session_state.data_df = new_df
 
-edited_df = st.data_editor(
-    st.session_state.data_df,
-    key="data_editor",
-    num_rows="dynamic",
-    width="stretch",  # instead of use_container_width
-)
-st.session_state.data_df = edited_df
+
         
 
 
