@@ -896,7 +896,6 @@ def main():
                     # learning_rate=1e-3,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
-                    scaled_space=show_scaled_space,
                 )
 
 
