@@ -363,7 +363,7 @@ def train_pythae_vae(
     latent_dim: int = 2,
     num_epochs: int = 5000,
     batch_size: int = 64,
-    learning_rate: float = 5e-3,
+    learning_rate: float = 1e-4,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
@@ -929,7 +929,7 @@ def main():
                     X,
                     latent_dim=latent_dim,
                     num_epochs = vae_epochs,
-                    # batch_size=16,
+                    batch_size=2,
                     # learning_rate=1e-3,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
