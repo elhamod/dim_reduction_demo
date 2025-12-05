@@ -733,7 +733,7 @@ def main():
         vae_epochs = 200
         latent_dim = 2
         if use_vae:
-            vae_epochs = st.slider("VAE training epochs", 50, 5000, 250, step=50)
+            vae_epochs = st.slider("VAE training epochs", 500, 50000, 2500, step=500)
             latent_dim = st.radio("VAE latent dimension", [1, 2], index=1)
             st.caption("Latent dimension is fixed at 2 for 2D manifold visualization.")
 
@@ -924,7 +924,7 @@ def main():
                 model, Z, X_recon_vae = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
-                    # num_epochs = 5000,
+                    num_epochs = vae_epochs,
                     # batch_size=16,
                     # learning_rate=1e-3,
                     # output_dir: str = "pythae_vae_runs",
