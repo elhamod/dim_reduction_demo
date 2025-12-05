@@ -354,7 +354,7 @@ class StreamlitLossCallback(TrainingCallback):
         #     parts.append(f"eval_loss = {eval_loss:.4f}")
 
         # if parts:
-        loss = metrics["train_epoch_loss]
+        loss = metrics["train_epoch_loss"]
         self.loss_placeholder.markdown(f"**VAE training loss** = {loss:.4f}")
 
 
