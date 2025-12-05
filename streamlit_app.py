@@ -324,7 +324,7 @@ import torch.nn as nn
 from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.models.base.base_utils import ModelOutput
 
-layer_1_size = 16
+layer_1_size = 32
 # class Encoder_AE_MLP(BaseEncoder):
 #     def __init__(self, args: dict):
 #         BaseEncoder.__init__(self)
@@ -473,7 +473,7 @@ class StreamlitLossCallback(TrainingCallback):
         if loss < self.best_train_loss:
             self.best_train_loss = loss
         if self.num_epochs % 100 == 0:
-            self.loss_placeholder.markdown(f"**VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
+            self.loss_placeholder.markdown(f"**Epoch** = {global_step}. **VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
 
 
 def train_pythae_vae(
