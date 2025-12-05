@@ -737,7 +737,24 @@ def main():
         # ====================================================
         pca, scaler, scores, X_recon = run_pca(X, pcs_to_show)
 
-        st.subheader("2. PCA components and explained variance")
+        # ====================================================
+        # 2a. Show reconstructed values & PCA scores as tables
+        # ====================================================
+        st.subheader("2a. Reconstructed values and PCA scores")
+
+        # Reconstructed values in original feature space
+        recon_df = pd.DataFrame(X_recon, columns=feature_names)
+        st.markdown("**Reconstructed values (in original feature units):**")
+        st.dataframe(recon_df.style.format("{:.4f}"), use_container_width=True)
+
+        # PCA scores (coordinates in PC space)
+        score_cols = [f"PC{i+1}" for i in range(scores.shape[1])]
+        scores_df = pd.DataFrame(scores, columns=score_cols)
+        st.markdown("**PCA scores (projection coordinates in PC-space):**")
+        st.dataframe(scores_df.style.format("{:.4f}"), use_container_width=True)
+
+
+        st.subheader("2b. PCA components and explained variance")
 
         comp_labels = [f"PC{i+1}" for i in range(pca.components_.shape[0])]
         loadings = pd.DataFrame(
