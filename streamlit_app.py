@@ -24,6 +24,14 @@ RECON_COLOR = "darkorange"
 ERROR_COLOR = "red"
 
 
+def _coerce_num_rows(default: int = 6, min_value: int = 1) -> int:
+    raw = st.session_state.get("num_rows_text", str(default)).strip()
+    try:
+        n = int(raw)
+    except ValueError:
+        n = default
+    return max(min_value, n)
+
 # ============================================================
 # PCA utilities
 # ============================================================
@@ -660,6 +668,18 @@ def main():
             except Exception as e:
                 st.error(f"Could not read CSV: {e}")
 
+
+        # NEW: number of rows (datapoints)
+        if "num_rows" not in st.session_state:
+            st.session_state.num_rows = 6
+        
+        st.text_input(
+            "Number of datapoints (rows)",
+            value=str(st.session_state.num_rows),
+            key="num_rows_text",
+            help="Enter an integer >= 1",
+        )
+
         st.slider("Number of features (dimensions)", 1, 10, key="num_features")
         pcs_to_show = st.slider("Number of PCs to visualize", 1, 3, 2)
         show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
@@ -681,15 +701,35 @@ def main():
         "You can add or delete rows. All values are treated as numeric."
     )
 
+    
+    
     num_features = st.session_state.num_features
-
+    
+    # NEW: target number of rows from textbox
+    target_rows = _coerce_num_rows(default=st.session_state.get("num_rows", 6), min_value=1)
+    st.session_state.num_rows = target_rows  # keep a clean int copy
+    
     if "data_df" not in st.session_state:
         st.session_state.data_df = pd.DataFrame(
-            np.random.randn(6, num_features),
+            np.random.randn(target_rows, num_features),
             columns=[f"x{i+1}" for i in range(num_features)],
         )
     else:
+        # keep columns in sync (existing helper)
         st.session_state.data_df = _ensure_table_shape(st.session_state.data_df, num_features)
+    
+        # NEW: resize rows while preserving existing values
+        df = st.session_state.data_df
+        if len(df) < target_rows:
+            extra = pd.DataFrame(
+                np.random.randn(target_rows - len(df), df.shape[1]),
+                columns=df.columns,
+            )
+            st.session_state.data_df = pd.concat([df, extra], ignore_index=True)
+        elif len(df) > target_rows:
+            st.session_state.data_df = df.iloc[:target_rows].reset_index(drop=True)
+    
+        
 
     edited_df = st.data_editor(
         st.session_state.data_df,
