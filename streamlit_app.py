@@ -237,85 +237,6 @@ def make_3d_pca_geometry(
         height=750,
     )
     return fig
-
-
-# def make_pca_score_figure(scores, pcs_to_show):
-#     n_samples, n_components = scores.shape
-#     pcs_to_show = min(pcs_to_show, n_components)
-
-#     if pcs_to_show == 1:
-#         fig = go.Figure()
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=np.arange(n_samples),
-#                 y=scores[:, 0],
-#                 mode="markers+lines",
-#                 name="PC1 score",
-#                 hoverinfo="text",
-#                 hovertext=[
-#                     f"Point #{i}<br>PC1 score = {scores[i,0]:.4f}"
-#                     for i in range(n_samples)
-#                 ],
-#             )
-#         )
-#         fig.update_layout(
-#             xaxis_title="Sample index",
-#             yaxis_title="PC1 score",
-#             title="PCA scores (1D)",
-#             height=500,
-#         )
-
-#     elif pcs_to_show == 2:
-#         fig = go.Figure()
-#         fig.add_trace(
-#             go.Scatter(
-#                 x=scores[:, 0],
-#                 y=scores[:, 1],
-#                 mode="markers",
-#                 name="Scores",
-#                 hoverinfo="text",
-#                 hovertext=[
-#                     f"Point #{i}<br>PC1 = {scores[i,0]:.4f}<br>PC2 = {scores[i,1]:.4f}"
-#                     for i in range(n_samples)
-#                 ],
-#             )
-#         )
-#         fig.update_layout(
-#             xaxis_title="PC1",
-#             yaxis_title="PC2",
-#             title="PCA scores (2D)",
-#             height=500,
-#         )
-
-#     else:
-#         fig = go.Figure()
-#         fig.add_trace(
-#             go.Scatter3d(
-#                 x=scores[:, 0],
-#                 y=scores[:, 1],
-#                 z=scores[:, 2],
-#                 mode="markers",
-#                 marker=dict(size=5),
-#                 name="Scores",
-#                 hoverinfo="text",
-#                 hovertext=[
-#                     f"Point #{i}<br>"
-#                     f"PC1 = {scores[i,0]:.4f}<br>"
-#                     f"PC2 = {scores[i,1]:.4f}<br>"
-#                     f"PC3 = {scores[i,2]:.4f}"
-#                     for i in range(n_samples)
-#                 ],
-#             )
-#         )
-#         fig.update_layout(
-#             scene=dict(xaxis_title="PC1", yaxis_title="PC2", zaxis_title="PC3"),
-#             title="PCA scores (3D)",
-#             height=700,
-#         )
-
-#     return fig
-
-
 # ============================================================
 # Pythae VAE utilities
 # ============================================================
@@ -475,7 +396,7 @@ class StreamlitLossCallback(TrainingCallback):
         if loss < self.best_train_loss:
             self.best_train_loss = loss
         if self.num_epochs % 100 == 0:
-            self.loss_placeholder.markdown(f"**Epoch** = {kwargs["global_step"]}. **VAE training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
+            self.loss_placeholder.markdown(f"**Epoch** = {kwargs["global_step"]}. **training loss** = {loss:.4f}. **Best training loss** = {self.best_train_loss:.4f}")
 
 
 def train_pythae_vae(
@@ -484,11 +405,12 @@ def train_pythae_vae(
     num_epochs: int = 5000,
     batch_size: int = 64,
     learning_rate: float = 1e-3,
+    use_ae=True
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
     """
-    Train a Pythae VAE on tabular data X (n_samples x n_features).
+    Train a Pythae on tabular data X (n_samples x n_features).
 
     Returns
     -------
@@ -508,17 +430,19 @@ def train_pythae_vae(
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # 1) Build VAE model config for tabular data
-    # model_config = VAEConfig(
-    #     input_dim=(n_features,),   # 1D vector input
-    #     latent_dim=latent_dim
-    # )
-    # model = VAE(model_config, encoder=Encoder_VAE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
-    model_config = AEConfig(
-        input_dim=(n_features,),   # 1D vector input
-        latent_dim=latent_dim
-    )
-    model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
+    if not use_ae:
+        # 1) Build VAE model config for tabular data
+        model_config = VAEConfig(
+            input_dim=(n_features,),   # 1D vector input
+            latent_dim=latent_dim
+        )
+        model = VAE(model_config, encoder=Encoder_VAE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
+    else:
+        model_config = AEConfig(
+            input_dim=(n_features,),   # 1D vector input
+            latent_dim=latent_dim
+        )
+        model = AE(model_config, encoder=Encoder_AE_MLP(model_config), decoder=Decoder_AE_MLP(model_config)).to(device)
 
     # print(model)
     
@@ -611,7 +535,7 @@ def make_vae_latent_and_manifold_figures(
         fig_latent.update_layout(
             xaxis_title="Sample index",
             yaxis_title="z1",
-            title="VAE latent space (1D)",
+            title="latent space (1D)",
             height=500,
         )
     else:
@@ -633,7 +557,7 @@ def make_vae_latent_and_manifold_figures(
         fig_latent.update_layout(
             xaxis_title="z1",
             yaxis_title="z2",
-            title="VAE latent space (2D)",
+            title="latent space (2D)",
             height=500,
         )
 
@@ -644,7 +568,7 @@ def make_vae_latent_and_manifold_figures(
     fig_manifold = go.Figure()
 
     # Original points (same color as PCA)
-    st.write("X3_orig", X3_orig)
+    # st.write("X3_orig", X3_orig)
     fig_manifold.add_trace(
         go.Scatter3d(
             x=X3_orig[:, 0],
@@ -652,7 +576,7 @@ def make_vae_latent_and_manifold_figures(
             z=X3_orig[:, 2],
             mode="markers",
             marker=dict(size=6, color=ORIG_COLOR),
-            name="Original (VAE view)",
+            name="Original",
             hoverinfo="text",
             hovertext=[
                 f"Point #{i}<br>"
@@ -665,7 +589,7 @@ def make_vae_latent_and_manifold_figures(
     )
 
     # VAE recon points (same color as PCA recon)    
-    st.write("X3_recon", X3_recon)
+    # st.write("X3_recon", X3_recon)
     fig_manifold.add_trace(
         go.Scatter3d(
             x=X3_recon[:, 0],
@@ -673,7 +597,7 @@ def make_vae_latent_and_manifold_figures(
             z=X3_recon[:, 2],
             mode="markers",
             marker=dict(size=4, symbol="x", color=RECON_COLOR),
-            name="VAE recon points",
+            name="recon points",
             hoverinfo="text",
             hovertext=[
                 f"Decoded point #{i}<br>"
@@ -695,7 +619,7 @@ def make_vae_latent_and_manifold_figures(
                 mode="lines",
                 line=dict(width=2, color=ERROR_COLOR),
                 showlegend=(i == 0),
-                name="VAE reconstruction error",
+                name="reconstruction error",
                 hoverinfo="skip",
             )
         )
@@ -726,7 +650,7 @@ def make_vae_latent_and_manifold_figures(
                 name="Decoded latent curve",
                 hoverinfo="text",
                 hovertext=(
-                    "Nonlinear manifold: decoded VAE curve<br>"
+                    "Nonlinear manifold: decoded curve<br>"
                     "Each point comes from decoding a z1 value in latent space."
                 ),
             )
@@ -749,19 +673,19 @@ def make_vae_latent_and_manifold_figures(
 
         with torch.no_grad():
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
-            st.write("Z", Z)
+            # st.write("Z", Z)
             decoded_out = model.decoder(z_tensor)
             decoded = scaler.inverse_transform(decoded_out["reconstruction"].cpu().numpy())
 
         decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
 
-        st.write("decoded3", np.concatenate(
-            [
-                z_tensor.detach().cpu().numpy(),
-                decoded[:, idxs]
-            ],
-            axis=1
-        ))
+        # st.write("decoded3", np.concatenate(
+        #     [
+        #         z_tensor.detach().cpu().numpy(),
+        #         decoded[:, idxs]
+        #     ],
+        #     axis=1
+        # ))
 
 
         fig_manifold.add_trace(
@@ -774,7 +698,7 @@ def make_vae_latent_and_manifold_figures(
                 name="Decoded latent grid",
                 hoverinfo="text",
                 hovertext=(
-                    "Nonlinear manifold: decoded VAE grid<br>"
+                    "Nonlinear manifold: decoded grid<br>"
                     "Each surface point comes from decoding a regular grid in (z1, z2)."
                 ),
                 surfacecolor=np.zeros_like(decoded3[:, :, 0]),
@@ -789,7 +713,7 @@ def make_vae_latent_and_manifold_figures(
             zaxis_title=selected_features[2],
             aspectmode="data",           # 🔥 SAME SCALE ON ALL AXES
         ),
-        title="VAE nonlinear manifold & reconstruction (original space)",
+        title="Nonlinear manifold & reconstruction (original space)",
         height=750,
     )
 
@@ -803,11 +727,11 @@ def make_vae_latent_and_manifold_figures(
 
 def main():
     st.set_page_config(
-        page_title="PCA & VAE Playground (Pythae)",
+        page_title="PCA & Auto-encoder Playground (Pythae)",
         layout="wide",
     )
 
-    st.title("PCA + VAE (Pythae) Interactive Playground")
+    st.title("PCA + Auto-encoder (Pythae) Interactive Playground")
 
     with st.expander("What this tool shows (for students / viewers)", expanded=False):
         st.markdown(
@@ -867,12 +791,13 @@ def main():
         show_scaled_space = st.checkbox("Show PCA geometry in scaled space", value=False)
 
         st.markdown("---")
-        use_vae = st.checkbox("Enable VAE (Pythae nonlinear view)", value=True)
+        use_vae = st.checkbox("Enable Nonlinear Auto-encoding", value=True)
+        use_ae = st.radio("Auto-encoder Type", ["AE", "VAE"]) == "AE"
         vae_epochs = 200
         latent_dim = 2
         if use_vae:
-            vae_epochs = st.slider("VAE training epochs", 500, 50000, 2500, step=500)
-            latent_dim = st.radio("VAE latent dimension", [1, 2], index=1)
+            vae_epochs = st.slider("Training epochs", 500, 50000, 2500, step=500)
+            latent_dim = st.radio("latent dimension", [1, 2], index=1)
             st.caption("Latent dimension is fixed at 2 for 2D manifold visualization.")
 
 
@@ -937,7 +862,7 @@ def main():
         st.session_state.run_pca = False
         
 
-    if st.button("Run PCA (and VAE if enabled)", type="primary"):
+    if st.button("Run", type="primary"):
         st.session_state.run_pca = True
 
     if st.session_state.run_pca:
@@ -1051,12 +976,12 @@ def main():
         # VAE (Pythae) nonlinear projection + manifold
         # ====================================================
         if use_vae:
-            st.subheader("5. VAE nonlinear embedding (Pythae)")
+            st.subheader("5. Nonlinear embedding (Pythae)")
 
             # placeholder for live loss updates
             training_status = st.empty()
 
-            with st.spinner("Training a small VAE on your data..."):
+            with st.spinner("Training a small auto-encoder on your data..."):
                 vae_callback = StreamlitLossCallback(training_status)
                 
                 model, Z, X_recon_vae, vae_scaler = train_pythae_vae(
@@ -1065,6 +990,7 @@ def main():
                     num_epochs = vae_epochs,
                     # batch_size=2,
                     learning_rate=1e-4,
+                    use_ae=use_ae,
                     # output_dir: str = "pythae_vae_runs",
                     loss_callback=vae_callback,
                 )
@@ -1073,13 +999,13 @@ def main():
 
             if num_features >= 3:
                 selected_features_vae = st.multiselect(
-                    "Choose 3 features for the VAE manifold in original space:",
+                    "Choose 3 features for the manifold in original space:",
                     feature_names,
                     default=feature_names[:3],
                     key="vae_axes",
                 )
                 if len(selected_features_vae) != 3:
-                    st.warning("Please select exactly 3 features for the VAE manifold.")
+                    st.warning("Please select exactly 3 features for the manifold.")
                 else:
                     fig_latent, fig_manifold = make_vae_latent_and_manifold_figures(
                         model,
