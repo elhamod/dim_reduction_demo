@@ -574,12 +574,12 @@ def train_pythae_vae(
         X_recon = out.recon_x.detach().cpu().numpy()
         Z = out.embedding.detach().cpu().numpy()
 
-    return trained_model, Z, scaler.inverse_transform(X_recon)
+    return trained_model, Z, scaler.inverse_transform(X_recon), scaler
 
 
 
 def make_vae_latent_and_manifold_figures(
-    model, Z, X, X_recon_vae, feature_names, selected_features, grid_points=15
+    model, Z, X, X_recon_vae, scaler, feature_names, selected_features, grid_points=15
 ):
     """
     - Latent scatter (1D or 2D)
@@ -712,10 +712,10 @@ def make_vae_latent_and_manifold_figures(
 
         with torch.no_grad():
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
-            decoded_out = model.decoder(z_tensor)
-            decoded = decoded_out["reconstruction"].cpu().numpy()
+            decoded_out = model.decoder(z_tensor))
+            decoded_unscaled = scaler.inverse_transform(decoded_out["reconstruction"].cpu().numpy())
 
-        decoded3 = decoded[:, idxs]
+        decoded3 = decoded_unscaled[:, idxs]
         fig_manifold.add_trace(
             go.Scatter3d(
                 x=decoded3[:, 0],
@@ -751,7 +751,7 @@ def make_vae_latent_and_manifold_figures(
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
             st.write("Z", Z)
             decoded_out = model.decoder(z_tensor)
-            decoded = decoded_out["reconstruction"].cpu().numpy()
+            decoded = scaler.inverse_transform(decoded_out["reconstruction"].cpu().numpy())
 
         decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
 
@@ -1059,7 +1059,7 @@ def main():
             with st.spinner("Training a small VAE on your data..."):
                 vae_callback = StreamlitLossCallback(training_status)
                 
-                model, Z, X_recon_vae = train_pythae_vae(
+                model, Z, X_recon_vae, vae_scaler = train_pythae_vae(
                     X,
                     latent_dim=latent_dim,
                     num_epochs = vae_epochs,
@@ -1086,6 +1086,7 @@ def main():
                         Z,
                         X,
                         X_recon_vae,
+                        vae_scaler,
                         feature_names,
                         selected_features_vae,
                         grid_points=50,
