@@ -644,7 +644,7 @@ def make_vae_latent_and_manifold_figures(
     fig_manifold = go.Figure()
 
     # Original points (same color as PCA)
-    st.write("X3_orig", X3_orig.detach().cpu().numpy())
+    st.write("X3_orig", X3_orig)
     fig_manifold.add_trace(
         go.Scatter3d(
             x=X3_orig[:, 0],
@@ -665,7 +665,7 @@ def make_vae_latent_and_manifold_figures(
     )
 
     # VAE recon points (same color as PCA recon)    
-    st.write("X3_recon", X3_recon.detach().cpu().numpy())
+    st.write("X3_recon", X3_recon)
     fig_manifold.add_trace(
         go.Scatter3d(
             x=X3_recon[:, 0],
@@ -750,13 +750,13 @@ def make_vae_latent_and_manifold_figures(
         with torch.no_grad():
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
             st.write("z_tensor", z_tensor.detach().cpu().numpy())
-            st.write("Z", Z.detach().cpu().numpy())
+            st.write("Z", Z)
             decoded_out = model.decoder(z_tensor)
             decoded = decoded_out["reconstruction"].cpu().numpy()
 
         decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
 
-        st.write("decoded3", decoded3.detach().cpu().numpy())
+        st.write("decoded3", decoded3)
 
         fig_manifold.add_trace(
             go.Surface(
