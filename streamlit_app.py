@@ -1076,7 +1076,7 @@ def main():
                         X_recon_vae,
                         feature_names,
                         selected_features_vae,
-                        grid_points=18,
+                        grid_points=50,
                     )
 
                     st.plotly_chart(fig_latent, use_container_width=True)
