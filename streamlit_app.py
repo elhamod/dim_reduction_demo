@@ -712,7 +712,7 @@ def make_vae_latent_and_manifold_figures(
 
         with torch.no_grad():
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
-            decoded_out = model.decoder(z_tensor))
+            decoded_out = model.decoder(z_tensor)
             decoded_unscaled = scaler.inverse_transform(decoded_out["reconstruction"].cpu().numpy())
 
         decoded3 = decoded_unscaled[:, idxs]
