@@ -749,14 +749,21 @@ def make_vae_latent_and_manifold_figures(
 
         with torch.no_grad():
             z_tensor = torch.tensor(grid_z.astype(np.float32)).to(device)
-            st.write("z_tensor", z_tensor.detach().cpu().numpy())
+            st.write("z_tensor", )
             st.write("Z", Z)
             decoded_out = model.decoder(z_tensor)
             decoded = decoded_out["reconstruction"].cpu().numpy()
 
         decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
 
-        st.write("decoded3", decoded[:, idxs])
+        st.write("decoded3", np.concatenate(
+            [
+                z_tensor.detach().cpu().numpy(),
+                decoded[:, idxs]
+            ],
+            axis=1
+        )
+
 
         fig_manifold.add_trace(
             go.Surface(
