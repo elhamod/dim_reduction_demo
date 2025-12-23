@@ -756,7 +756,7 @@ def make_vae_latent_and_manifold_figures(
 
         decoded3 = decoded[:, idxs].reshape(grid_points, grid_points, 3)
 
-        st.write("decoded3", decoded3)
+        st.write("decoded3", decoded[:, idxs])
 
         fig_manifold.add_trace(
             go.Surface(
