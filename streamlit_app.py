@@ -405,7 +405,7 @@ def train_pythae_vae(
     num_epochs: int = 5000,
     batch_size: int = 64,
     learning_rate: float = 1e-3,
-    use_ae=True
+    use_ae=True,
     # output_dir: str = "pythae_vae_runs",
     loss_callback: TrainingCallback | None = None,
 ):
